@@ -1,6 +1,7 @@
 import User from "../models/user.model.js";
 import validator from "validator";
 import bcrypt from "bcryptjs";
+import { generateToken } from "../config/token.js";
 
 export const signup = async (req, res) => {
   try {
@@ -84,10 +85,35 @@ export const login = async (req, res) => {
     if (!isPasswordMatch) {
       throw new Error("Invalid Credentials");
     }
+
+    const token = await generateToken(user._id);
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: "None",
+      secure: false,
+    });
+
     res.status(200).json({
       success: true,
       message: "login successfully",
       userId: user._id,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const logout = async (req, res) => {
+  try {
+    res.clearCookie("token");
+    return res.status(200).json({
+      success: true,
+      message: "logout successfully",
     });
   } catch (error) {
     res.status(400).json({
