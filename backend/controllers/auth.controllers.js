@@ -66,3 +66,33 @@ export const signup = async (req, res) => {
     });
   }
 };
+
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      throw new Error("All fields are required");
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      throw new Error("Invalid Credentials");
+    }
+
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordMatch) {
+      throw new Error("Invalid Credentials");
+    }
+    res.status(200).json({
+      success: true,
+      message: "login successfully",
+      userId: user._id,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
