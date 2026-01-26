@@ -25,7 +25,7 @@ export const signup = async (req, res) => {
       })
     ) {
       throw new Error(
-        "Password is not strong enough (4 chars, uppercase, lowercase, number, symbol required)."
+        "Password is not strong enough (4 chars, uppercase, lowercase, number, symbol required).",
       );
     }
 
@@ -59,6 +59,7 @@ export const signup = async (req, res) => {
       success: true,
       message: "User created successfully",
       userId: user._id,
+      user: user,
     });
   } catch (error) {
     res.status(400).json({
