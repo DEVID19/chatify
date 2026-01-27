@@ -8,9 +8,11 @@ const Login = () => {
   const [show, setShow] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const handleLogin = async (e) => {
     try {
+      setLoading(true);
       e.preventDefault();
       // Handle Login logic here
       if (!email || !password) {
@@ -27,8 +29,14 @@ const Login = () => {
         { withCredentials: true },
       );
       console.log(result);
+      setEmail("");
+      setPassword("");
+      setLoading(false);
+      setError("");
     } catch (error) {
+      setLoading(false);
       console.log(error);
+      setError(error?.response?.data?.message);
     }
   };
 
@@ -67,9 +75,16 @@ const Login = () => {
               {`${show ? "Hide" : "Show"}`}
             </span>
           </div>
-
-          <button className="px-[20px] py-[10px] bg-[#20c7ff]  rounded-2xl shadow-gray-400 shadow-lg w-[200px] mt-[20px] cursor-pointer text-[20px] font-semibold hover:shadow-inner">
-            Log in
+          {error && (
+            <p className="text-red-500 text-md font-bold items-center justify-center text-center">
+              {error}
+            </p>
+          )}
+          <button
+            className="px-[20px] py-[10px] bg-[#20c7ff]  rounded-2xl shadow-gray-400 shadow-lg w-[200px] mt-[20px] cursor-pointer text-[20px] font-semibold hover:shadow-inner"
+            disabled={loading}
+          >
+            {loading ? "Loading..." : "Log in"}
           </button>
 
           <p>
