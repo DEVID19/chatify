@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { server } from "../main";
 import axios from "axios";
+import { useDispatch } from "react-redux";
+import { setuserData } from "../redux/userSlice";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -11,6 +13,7 @@ const Signup = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  let dispatch = useDispatch();
   const handleSignup = async (e) => {
     try {
       setLoading(true);
@@ -30,7 +33,7 @@ const Signup = () => {
         },
         { withCredentials: true },
       );
-      console.log(result);
+      dispatch(setuserData(result.data));
       setUsername("");
       setEmail("");
       setPassword("");
@@ -91,7 +94,10 @@ const Signup = () => {
               {error}
             </p>
           )}
-          <button className="px-[20px] py-[10px] bg-[#20c7ff]  rounded-2xl shadow-gray-400 shadow-lg w-[200px] mt-[20px] cursor-pointer text-[20px] font-semibold hover:shadow-inner" disabled={loading}>
+          <button
+            className="px-[20px] py-[10px] bg-[#20c7ff]  rounded-2xl shadow-gray-400 shadow-lg w-[200px] mt-[20px] cursor-pointer text-[20px] font-semibold hover:shadow-inner"
+            disabled={loading}
+          >
             {loading ? "Loading..." : "Sign up"}
           </button>
 

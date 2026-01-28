@@ -5,12 +5,15 @@ import authRouter from "./routes/auth.route.js";
 import connectDb from "./config/db.js";
 import cors from "cors";
 import userRouter from "./routes/user.route.js";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 const port = process.env.PORT || 8000;
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
+
 app.use(
   cors({
     origin: "http://localhost:5173",
