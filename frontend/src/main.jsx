@@ -7,7 +7,7 @@ import { store } from "./redux/store.js";
 export const server = "http://localhost:8000";
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>
-    <Provider  store={store}>
+    <Provider store={store}>
       <App />
     </Provider>
   </BrowserRouter>,

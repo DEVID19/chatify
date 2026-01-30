@@ -1,6 +1,7 @@
+import uploadOnCloudinary from "../config/cloudinary.js";
 import User from "../models/user.model.js";
 
-const currentUser = async (req, res) => {
+export const currentUser = async (req, res) => {
   try {
     let userId = req.userId;
 
@@ -15,4 +16,23 @@ const currentUser = async (req, res) => {
   }
 };
 
-export default currentUser;
+export const editProfile = async (req, res) => {
+  try {
+    const { name } = req.body;
+    let image;
+    if (req.file) {
+      image = await uploadOnCloudinary(req.file.path);
+    }
+
+    let editedUser = await User.findByIdAndUpdate(req.userId, {
+      name,
+      image,
+    });
+    if (!editProfile) {
+      return res.status(400).json({ message: "user not found" });
+    }
+    return res.status(200).json(editedUser);
+  } catch (error) {
+    res.status(500).json({ message: `Unable to edit the profile ${error}` });
+  }
+};
