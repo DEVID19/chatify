@@ -1,26 +1,30 @@
 import { useEffect } from "react";
 import { server } from "../main";
-import { useDispatch, useSelector } from "react-redux";
-import { setuserData } from "../redux/userSlice";
+import { useDispatch } from "react-redux";
+import { setLoading, setuserData } from "../redux/userSlice";
 import axios from "axios";
 
 const useCurrentUser = () => {
   let dispatch = useDispatch();
-  let { userData } = useSelector((state) => state.user);
+  // let { userData } = useSelector((state) => state.user);
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        let CurrentUserData = await axios.get(`${server}/api/user/current`, {
+        const res = await axios.get(`${server}/api/user/current`, {
           withCredentials: true,
         });
-        dispatch(setuserData(CurrentUserData.data));
-      } catch (error) {
-        console.log(`no active session found ${error}`);
+        console.log("CURRENT USER API RESPONSE 👉", res.data);
+        dispatch(setuserData(res.data));
+      } catch (err) {
+        dispatch(setuserData(null));
+        console.log(err);
+      } finally {
+        dispatch(setLoading(false));
       }
     };
 
     fetchUser();
-  }, [userData]);
+  }, []);
 };
 
 export default useCurrentUser;

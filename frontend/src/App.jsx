@@ -9,7 +9,9 @@ import { useSelector } from "react-redux";
 
 function App() {
   useCurrentUser();
-  let { userData } = useSelector((state) => state.user);
+  const { userData, loading } = useSelector((state) => state.user);
+
+  if (loading) return <p>loading .... </p>; // or spinner
   return (
     <Routes>
       <Route

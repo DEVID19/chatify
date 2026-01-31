@@ -38,7 +38,7 @@ const userSchema = new mongoose.Schema(
           "Password is not strong enough (4 chars, uppercase, lowercase, number, symbol required",
       },
     },
-    profileImg: {
+    image: {
       type: String,
       trim: true,
       default: "https://example.com/default-photo.jpg",
@@ -47,7 +47,6 @@ const userSchema = new mongoose.Schema(
         message: "Invalid Url ",
       },
     },
-
     fullName: {
       type: String,
       trim: true,
@@ -61,7 +60,7 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const User = mongoose.model("user", userSchema);

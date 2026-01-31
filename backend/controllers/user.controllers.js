@@ -18,17 +18,22 @@ export const currentUser = async (req, res) => {
 
 export const editProfile = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { fullName } = req.body;
+
     let image;
     if (req.file) {
       image = await uploadOnCloudinary(req.file.path);
     }
 
-    let editedUser = await User.findByIdAndUpdate(req.userId, {
-      name,
-      image,
-    });
-    if (!editProfile) {
+    let editedUser = await User.findByIdAndUpdate(
+      req.userId,
+      {
+       fullName,
+        image,
+      },
+      { new: true },
+    );
+    if (!editedUser) {
       return res.status(400).json({ message: "user not found" });
     }
     return res.status(200).json(editedUser);

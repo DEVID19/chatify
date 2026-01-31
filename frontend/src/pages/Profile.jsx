@@ -10,8 +10,8 @@ import { setuserData } from "../redux/userSlice";
 const Profile = () => {
   let { userData } = useSelector((state) => state.user);
   let navigate = useNavigate();
-  let [name, setName] = useState(userData.name || "");
-  let [forntendImage, setFrontendImage] = useState(userData.image || dp);
+  let [fullName, setFullName] = useState(userData?.fullName || "");
+  let [frontendImage, setFrontendImage] = useState(userData?.image || dp);
   let [backendImage, setBackendImage] = useState(null);
   let dispatch = useDispatch();
   let [saving, setSaving] = useState(false);
@@ -28,7 +28,7 @@ const Profile = () => {
     setSaving(true);
     try {
       let formData = new FormData();
-      formData.append("name", name);
+      formData.append("fullName", fullName);
       if (backendImage) {
         formData.append("image", backendImage);
       }
@@ -56,7 +56,7 @@ const Profile = () => {
         onClick={() => image.current.click()}
       >
         <div className="w-[200px] h-[200px] rounded-full overflow-hidden flex justify-center items-center">
-          <img src={forntendImage} alt="dp image" className="h-[100%]" />
+          <img src={frontendImage} alt="dp image" className="h-[100%]" />
         </div>
         <div className="absolute bottom-4 text-gray-700 right-4 w-[35px] h-[35px]  rounded-full bg-[#20c7ff] flex justify-center items-center  shadow-gray-400  shadow-lg ">
           <IoCameraOutline className=" text-gray-700  w-[25px] h-[25px]" />
@@ -78,20 +78,20 @@ const Profile = () => {
           type="text"
           placeholder="Enter your name "
           className="w-[90%] h-[50px] outline-none border-2 border-[#20c7ff] px-[20px] py-[20px]  bg-white rounded-lg shadow-gray-400  shadow-lg text-gray-700 text-[19px]"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
         />
         <input
           type="text"
           readOnly
           className="w-[90%] h-[50px] outline-none border-2 border-[#20c7ff] px-[20px] py-[20px]  bg-white rounded-lg shadow-gray-400  shadow-lg text-gray-400 text-[19px]"
-          value={userData?.user?.username}
+          value={userData?.username}
         />
         <input
           type="text"
           readOnly
           className="w-[90%] h-[50px] outline-none border-2 border-[#20c7ff] px-[20px] py-[20px]  bg-white rounded-lg shadow-gray-400  shadow-lg text-gray-400 text-[19px]"
-          value={userData?.user?.email}
+          value={userData?.email}
         />
         <button
           className="px-[20px] py-[10px] bg-[#20c7ff]  rounded-2xl shadow-gray-400 shadow-lg w-[200px] mt-[20px] cursor-pointer text-[20px] font-semibold hover:shadow-inner"
