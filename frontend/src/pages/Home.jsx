@@ -1,9 +1,16 @@
-import React from 'react'
+import React from "react";
+import Sidebar from "../components/Sidebar";
+import MessageArea from "../components/MessageArea";
+import useOtherUsers from "../customHooks/useOtherUsers";
 
 const Home = () => {
+  useOtherUsers();
   return (
-    <div>Home</div>
-  )
-}
+    <div className="w-full h-[100vh] flex ">
+      <Sidebar />
+      <MessageArea />
+    </div>
+  );
+};
 
-export default Home
+export default Home;

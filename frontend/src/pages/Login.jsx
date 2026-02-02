@@ -32,6 +32,7 @@ const Login = () => {
         { withCredentials: true },
       );
       dispatch(setuserData(result.data));
+      navigate("/");
       setEmail("");
       setPassword("");
       setLoading(false);

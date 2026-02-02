@@ -18,7 +18,7 @@ export const currentUser = async (req, res) => {
 
 export const editProfile = async (req, res) => {
   try {
-    const { fullName } = req.body;
+    const { fullName, status } = req.body;
 
     let image;
     if (req.file) {
@@ -28,7 +28,8 @@ export const editProfile = async (req, res) => {
     let editedUser = await User.findByIdAndUpdate(
       req.userId,
       {
-       fullName,
+        fullName,
+        status,
         image,
       },
       { new: true },
@@ -39,5 +40,17 @@ export const editProfile = async (req, res) => {
     return res.status(200).json(editedUser);
   } catch (error) {
     res.status(500).json({ message: `Unable to edit the profile ${error}` });
+  }
+};
+
+export const getOtherUsers = async (req, res) => {
+  try {
+    const otherUsers = await User.find({
+      _id: { $ne: req.userId },
+    }).select("-password");
+
+    return res.status(200).json(otherUsers);
+  } catch (error) {
+    res.status(500).json({ message: `Unable to get other users${error}` });
   }
 };

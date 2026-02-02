@@ -40,12 +40,7 @@ const userSchema = new mongoose.Schema(
     },
     image: {
       type: String,
-      trim: true,
-      default: "https://example.com/default-photo.jpg",
-      validate: {
-        validator: (value) => validator.isURL(value),
-        message: "Invalid Url ",
-      },
+      default: null,
     },
     fullName: {
       type: String,

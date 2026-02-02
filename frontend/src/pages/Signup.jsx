@@ -34,6 +34,7 @@ const Signup = () => {
         { withCredentials: true },
       );
       dispatch(setuserData(result.data));
+      navigate("/profile");
       setUsername("");
       setEmail("");
       setPassword("");
