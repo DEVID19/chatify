@@ -1,11 +1,11 @@
 import express from "express";
 import dotenv from "dotenv";
-
 import authRouter from "./routes/auth.route.js";
 import connectDb from "./config/db.js";
 import cors from "cors";
 import userRouter from "./routes/user.route.js";
 import cookieParser from "cookie-parser";
+import MessageRouter from "./routes/message.route.js";
 
 dotenv.config();
 const port = process.env.PORT || 8000;
@@ -23,6 +23,7 @@ app.use(
 
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
+app.use("/api/message", MessageRouter);
 
 app.listen(port, () => {
   connectDb();

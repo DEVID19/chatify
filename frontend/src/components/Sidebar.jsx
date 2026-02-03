@@ -8,10 +8,16 @@ import { RiLogoutCircleLine } from "react-icons/ri";
 import { useState } from "react";
 import axios from "axios";
 import { server } from "../main";
-import { setOtherUsers, setSelectedUser, setuserData } from "../redux/userSlice";
+import {
+  setOtherUsers,
+  setSelectedUser,
+  setuserData,
+} from "../redux/userSlice";
 import { useNavigate } from "react-router-dom";
 const Sidebar = () => {
-  let { userData, otherUsers , selectedUser } = useSelector((state) => state.user);
+  let { userData, otherUsers, selectedUser } = useSelector(
+    (state) => state.user,
+  );
   let [searchActive, setSearchActive] = useState(false);
   let dispatch = useDispatch();
   let navigate = useNavigate();
@@ -28,7 +34,9 @@ const Sidebar = () => {
     }
   };
   return (
-    <div className={`lg:w-[30%] w-full h-full bg-slate-200 lg:block ${!selectedUser ? "block" : "hidden"}`}>
+    <div
+      className={`lg:w-[30%] w-full h-full bg-slate-200 lg:block ${!selectedUser ? "block" : "hidden"}`}
+    >
       <div
         className="w-15 h-14 rounded-full shadow-lg overflow-hidden bg-[#19cdff] shadow-gray-500 flex items-center justify-center cursor-pointer hover:scale-110 fixed bottom-[20px] left-[20px]"
         onClick={handleLogout}
@@ -88,12 +96,16 @@ const Sidebar = () => {
 
       <div className="w-full  h-[60vh] overflow-auto flex flex-col gap-[20px] mt-[20px] items-center  ">
         {otherUsers?.map((user) => (
-          <div className="w-[95%] h-[60px] flex  items-center gap-[20px] bg-white shadow-lg shadow-gray-500 rounded-full hover:bg-[#63c2dc] " 
-          onClick={()=>dispatch(setSelectedUser(user))}>
+          <div
+            className="w-[95%] h-[60px] flex  items-center gap-[20px] bg-white shadow-lg shadow-gray-500 rounded-full hover:bg-[#63c2dc] "
+            onClick={() => dispatch(setSelectedUser(user))}
+          >
             <div className="w-[60px] h-[60px] rounded-full overflow-hidden flex justify-center items-center shadow-gray-500 shadow-lg">
               <img src={user?.image || dp} alt="" className="h-[100%]" />
             </div>
-            <h1 className="text-gray-800 font-semibold text-[20px] ">{user.fullName || user.username}</h1>
+            <h1 className="text-gray-800 font-semibold text-[20px] ">
+              {user.fullName || user.username}
+            </h1>
           </div>
         ))}
       </div>
