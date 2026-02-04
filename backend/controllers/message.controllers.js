@@ -1,3 +1,4 @@
+import uploadOnCloudinary from "../config/cloudinary.js";
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
 
@@ -24,7 +25,7 @@ export const sendMessage = async (req, res) => {
     });
 
     if (!conversation) {
-      conversation = await conversation.create({
+      conversation = await Conversation.create({
         participants: [sender, receiver],
         messages: [newMessage._id],
       });
@@ -46,7 +47,7 @@ export const getMessages = async (req, res) => {
 
     let conversation = await Conversation.findOne({
       participants: { $all: [sender, receiver] },
-    }).populate("message");
+    }).populate("messages");
 
     if (!conversation) {
       return res.status(400).json({ message: "conversation not found " });

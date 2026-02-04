@@ -6,7 +6,7 @@ import useOtherUsers from "../customHooks/useOtherUsers";
 const Home = () => {
   useOtherUsers();
   return (
-    <div className="w-full h-[100vh] flex ">
+    <div className="w-full h-[100vh] flex overflow-hidden ">
       <Sidebar />
       <MessageArea />
     </div>

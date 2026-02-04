@@ -15,6 +15,6 @@ MessageRouter.post(
   sendMessage,
 );
 
-MessageRouter.post("/send/:receiver", isAuth, getMessages);
+MessageRouter.get("/send/:receiver", isAuth, getMessages);
 
 export default MessageRouter;
