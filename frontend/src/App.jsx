@@ -6,9 +6,16 @@ import useCurrentUser from "./customHooks/useCurrentUser";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import { useSelector } from "react-redux";
+import { useEffect } from "react";
+import { io } from "socket.io-client";
 
 function App() {
   useCurrentUser();
+
+  useEffect(() => {
+    const socket = io("http://localhost:8000");
+  }, []);
+
   const { userData, loading } = useSelector((state) => state.user);
 
   if (loading) return <p>loading .... </p>; // or spinner

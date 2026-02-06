@@ -6,11 +6,11 @@ import cors from "cors";
 import userRouter from "./routes/user.route.js";
 import cookieParser from "cookie-parser";
 import MessageRouter from "./routes/message.route.js";
+import { app, server } from "./socket/socket.js";
 
 dotenv.config();
 const port = process.env.PORT || 8000;
 
-const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
@@ -25,7 +25,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/message", MessageRouter);
 
-app.listen(port, () => {
+server.listen(port, () => {
   connectDb();
   console.log(`Server is running on port ${port}`);
 });

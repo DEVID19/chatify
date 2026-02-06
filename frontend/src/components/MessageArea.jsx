@@ -11,9 +11,11 @@ import SenderMessage from "./SenderMessage";
 import ReceiverMessage from "./ReceiverMessage";
 import axios from "axios";
 import { server } from "../main";
+import { setMessages } from "../redux/messageSlice";
 
 const MessageArea = () => {
-  let { selectedUser } = useSelector((state) => state.user);
+  let { selectedUser, userData } = useSelector((state) => state.user);
+  let { messages } = useSelector((state) => state.messages);
   let dispatch = useDispatch();
   let [showEmojiPicker, setShowEmojiPicker] = useState(false);
   let [input, setInput] = useState("");
@@ -33,9 +35,10 @@ const MessageArea = () => {
         formData,
         { withCredentials: true },
       );
+      dispatch(setMessages([...messages, result.data]));
       setFrontendImage(null);
       setBackendImage(null);
-      setInput(null);
+      setInput("");
     } catch (error) {
       console.log(error);
     }
@@ -82,7 +85,7 @@ const MessageArea = () => {
 
           {/* emoji picker code below  */}
 
-          <div className="w-full  h-[550px] flex flex-col py-[30px] px-[20px]  overflow-auto ">
+          <div className="w-full  h-[550px] flex flex-col py-[30px] px-[20px]  overflow-auto gap-[20px]">
             {showEmojiPicker && (
               <div className="absolute bottom-[120px] left-[20px] ">
                 <EmojiPicker
@@ -93,8 +96,23 @@ const MessageArea = () => {
                 />
               </div>
             )}
-            <SenderMessage />
-            <ReceiverMessage />
+
+            {messages && messages.map((messages) =>
+              messages.sender == userData._id ? (
+                <SenderMessage
+                  image={messages.image}
+                  message={messages.message}
+                />
+              ) : (
+                <ReceiverMessage
+                  image={messages.image}
+                  message={messages.message}
+                />
+              ),
+            )}
+
+            {/* <SenderMessage />
+            <ReceiverMessage /> */}
           </div>
 
           {/* form div  below  */}

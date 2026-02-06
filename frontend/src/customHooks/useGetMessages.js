@@ -1,30 +1,31 @@
 import { useEffect } from "react";
 import { server } from "../main";
 import { useDispatch, useSelector } from "react-redux";
-import { setLoading, setuserData } from "../redux/userSlice";
 import axios from "axios";
+import { setMessages } from "../redux/messageSlice";
 
 const useGetMessages = () => {
   let dispatch = useDispatch();
-  let { selectedUser } = useSelector();
+  let { selectedUser, userData } = useSelector((state) => state.user);
   useEffect(() => {
-    const getMessages = async () => {
+    const fetchMessages = async () => {
       try {
-        const res = await axios.get(`${server}/api/message/${selectedUser._id}`, {
-          withCredentials: true,
-        });
+        const res = await axios.get(
+          `${server}/api/message/get/${selectedUser._id}`,
+          {
+            withCredentials: true,
+          },
+        );
 
-        dispatch(setuserData(res.data));
+        dispatch(setMessages(res.data));
       } catch (err) {
-        dispatch(setuserData(null));
+        dispatch(setMessages([]));
         console.log(err);
-      } finally {
-        dispatch(setLoading(false));
       }
-    };
+    }; 
 
-    getMessages();
-  }, []);
+    fetchMessages();
+  }, [selectedUser, userData]);
 };
 
 export default useGetMessages;

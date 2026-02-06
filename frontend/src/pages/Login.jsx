@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { server } from "../main";
 import axios from "axios";
 import { useDispatch } from "react-redux";
-import { setuserData } from "../redux/userSlice";
+import { setSelectedUser, setuserData } from "../redux/userSlice";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -32,6 +32,7 @@ const Login = () => {
         { withCredentials: true },
       );
       dispatch(setuserData(result.data));
+      dispatch(setSelectedUser(null));
       navigate("/");
       setEmail("");
       setPassword("");
