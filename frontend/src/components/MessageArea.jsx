@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import dp from "../assets/dp.png";
 import { useDispatch, useSelector } from "react-redux";
@@ -14,7 +14,7 @@ import { server } from "../main";
 import { setMessages } from "../redux/messageSlice";
 
 const MessageArea = () => {
-  let { selectedUser, userData } = useSelector((state) => state.user);
+  let { selectedUser, userData, socket } = useSelector((state) => state.user);
   let { messages } = useSelector((state) => state.messages);
   let dispatch = useDispatch();
   let [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -22,8 +22,12 @@ const MessageArea = () => {
   let [frontendImage, setFrontendImage] = useState(null);
   let [backendImage, setBackendImage] = useState(null);
   let image = useRef();
+  const messagesRef = useRef(null);
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
+    if (!input && !backendImage) return;
+
     try {
       let formData = new FormData();
       formData.append("message", input);
@@ -44,6 +48,25 @@ const MessageArea = () => {
     }
   };
 
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+    socket.on("newMessage", (mess) => {
+      dispatch(setMessages([...messages, mess]));
+    });
+
+    return () => socket.off("newMessage");
+  }, [messages, setMessages]);
+
+  // to scroll onmessage appear
+  useEffect(() => {
+    const el = messagesRef.current;
+    if (!el) return;
+
+    el.scrollTop = el.scrollHeight;
+  }, [messages]);
+
   const onEmojiClick = (emojiData) => {
     setInput((prevInput) => prevInput + emojiData.emoji);
     setShowEmojiPicker(false);
@@ -59,11 +82,11 @@ const MessageArea = () => {
 
   return (
     <div
-      className={`lg:w-[70%] w-full h-full bg-slate-200 border-l-2 border-gray-300 
+      className={`lg:w-[70%] w-full h-full bg-slate-200 border-l-2 border-gray-300 overflow-hidden 
         ${selectedUser ? "flex" : "hidden"} lg:flex  relative`}
     >
       {selectedUser ? (
-        <div className="w-full h-[100vh]">
+        <div className="w-full h-full flex flex-col">
           <div className="w-full h-[100px] bg-[#1797c2] rounded-b-[30px] shadow-lg shadow-gray-400 flex items-center px-[20px]  gap-[20px] ">
             <div
               className="cursor-pointer"
@@ -85,38 +108,42 @@ const MessageArea = () => {
 
           {/* emoji picker code below  */}
 
-          <div className="w-full  h-[550px] flex flex-col py-[30px] px-[20px]  overflow-auto gap-[20px]">
+          <div
+            className="flex-1 overflow-y-auto px-[20px] py-[20px] flex flex-col gap-5 "
+            ref={messagesRef}
+          >
             {showEmojiPicker && (
               <div className="absolute bottom-[120px] left-[20px] ">
                 <EmojiPicker
                   width={250}
                   height={350}
-                  className="shadow-lg"
+                  className="shadow-lg z-[100]"
                   onEmojiClick={onEmojiClick}
                 />
               </div>
             )}
 
-            {messages && messages.map((messages) =>
-              messages.sender == userData._id ? (
-                <SenderMessage
-                  image={messages.image}
-                  message={messages.message}
-                />
-              ) : (
-                <ReceiverMessage
-                  image={messages.image}
-                  message={messages.message}
-                />
-              ),
-            )}
+            {messages &&
+              messages.map((messages) =>
+                messages.sender == userData._id ? (
+                  <SenderMessage
+                    image={messages.image}
+                    message={messages.message}
+                  />
+                ) : (
+                  <ReceiverMessage
+                    image={messages.image}
+                    message={messages.message}
+                  />
+                ),
+              )}
 
             {/* <SenderMessage />
             <ReceiverMessage /> */}
           </div>
 
           {/* form div  below  */}
-          <div className="w-full  h-[100px] lg:w-[70%] fixed bottom-[20px] flex items-center justify-center ">
+          <div className="w-full  h-[100px] lg:w-[98%]  flex items-center justify-center ">
             <img
               src={frontendImage}
               alt=""
@@ -153,9 +180,11 @@ const MessageArea = () => {
               <div onClick={() => image.current.click()}>
                 <FaImages className="w-[25px] h-[25px] text-white cursor-pointer " />
               </div>
-              <button>
-                <RiSendPlane2Fill className="w-[25px] h-[25px] text-white cursor-pointer" />
-              </button>
+              {(input.length > 0 || backendImage != null) && (
+                <button type="submit">
+                  <RiSendPlane2Fill className="w-[25px] h-[25px] text-white cursor-pointer" />
+                </button>
+              )}
             </form>
           </div>
         </div>

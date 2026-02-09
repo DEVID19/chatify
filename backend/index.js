@@ -6,13 +6,12 @@ import cors from "cors";
 import userRouter from "./routes/user.route.js";
 import cookieParser from "cookie-parser";
 import MessageRouter from "./routes/message.route.js";
-import { app, server } from "./socket/socket.js";
+import { app, server } from "./socket/Socket.js";
+
+// import { app, server } from "./socket/socket.js"
 
 dotenv.config();
 const port = process.env.PORT || 8000;
-
-app.use(express.json());
-app.use(cookieParser());
 
 app.use(
   cors({
@@ -20,6 +19,9 @@ app.use(
     credentials: true,
   }),
 );
+
+app.use(express.json());
+app.use(cookieParser());
 
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);

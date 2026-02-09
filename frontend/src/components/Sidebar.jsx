@@ -35,7 +35,7 @@ const Sidebar = () => {
   };
   return (
     <div
-      className={`lg:w-[30%] w-full h-full bg-slate-200 lg:block ${!selectedUser ? "block" : "hidden"}`}
+      className={`lg:w-[30%] w-full h-full bg-slate-200 lg:block  ${!selectedUser ? "block" : "hidden"}`}
     >
       <div
         className="w-15 h-14 rounded-full shadow-lg overflow-hidden bg-[#19cdff] shadow-gray-500 flex items-center justify-center cursor-pointer hover:scale-110 fixed bottom-[20px] left-[20px]"
@@ -44,7 +44,7 @@ const Sidebar = () => {
         <RiLogoutCircleLine className="w-7 h-7" />
       </div>
 
-      <div className="w-full h-[300px] bg-[#19cdff] rounded-b-[30%] shadow-lg shadow-gray-400 flex flex-col justify-center px-[20px]">
+      <div className="w-full h-[300px] bg-[#19cdff] rounded-b-[30%] shadow-lg shadow-gray-400 flex flex-col justify-center px-[20px] ">
         <h1 className="text-white font-bold text-[25px]">Chatify</h1>
         <div className="w-full flex justify-between items-center  ">
           <h1 className="text-gray-800 font-bold text-[25px] ">
@@ -53,7 +53,7 @@ const Sidebar = () => {
           <div
             className="w-22 h-22 sm:w-20 sm:h-20 rounded-full border-2 border-white shadow-lg overflow-hidden bg-white shadow-gray-500  cursor-pointer hover:scale-110"
             onClick={() => navigate("/profile")}
-          >
+           >
             <img
               src={userData?.image || dp}
               alt="Profile"
@@ -94,7 +94,7 @@ const Sidebar = () => {
         </div>
       </div>
 
-      <div className="w-full  h-[60vh] overflow-auto flex flex-col gap-[20px] mt-[20px] items-center  ">
+      <div className="w-full  h-[55vh] overflow-auto flex flex-col gap-[20px] mt-[20px] items-center  ">
         {otherUsers?.map((user) => (
           <div
             className="w-[95%] h-[60px] flex  items-center gap-[20px] bg-white shadow-lg shadow-gray-500 rounded-full hover:bg-[#63c2dc] "

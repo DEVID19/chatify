@@ -1,20 +1,37 @@
 import http from "http";
 import express from "express";
 import { Server } from "socket.io";
+
 let app = express();
 
 const server = http.createServer(app);
-const io = new Server({
+const io = new Server(server, {
   cors: {
     origin: "http://localhost:5173",
   },
 });
 
+const userSocketMap = {};
+
+export const getReceiverSocketId = (receiver) => {
+  return userSocketMap[receiver];
+};
+
 io.on("connection", (socket) => {
-  console.log(socket.id);
+  const userId = socket.handshake.query.userId;
 
-  io.emit("hello" , "hello devid")
+  if (userId != undefined) {
+    console.log(userId, socket.id);
+    userSocketMap[userId] = socket.id;
+    //userId : socketid   aise bante  jayenge
+  }
 
+  io.emit("getOnlineUsers", Object.keys(userSocketMap));
+
+  socket.on("disconnect", () => {
+    delete userSocketMap[userId];
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  });
 });
 
 export { app, server, io };

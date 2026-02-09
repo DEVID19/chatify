@@ -5,18 +5,40 @@ import Login from "./pages/login";
 import useCurrentUser from "./customHooks/useCurrentUser";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { io } from "socket.io-client";
+import { server } from "./main";
+import { setOnlineUsers, setSocket } from "./redux/userSlice";
 
 function App() {
   useCurrentUser();
-
+  const { userData, loading, socket, onlineUsers } = useSelector(
+    (state) => state.user,
+  );
+  const dispatch = useDispatch();
   useEffect(() => {
-    const socket = io("http://localhost:8000");
-  }, []);
+    if (userData) {
+      const socketio = io(`${server}`, {
+        query: {
+          userId: userData?._id,
+        },
+      });
 
-  const { userData, loading } = useSelector((state) => state.user);
+      dispatch(setSocket(socketio));
+
+      socketio.on("getOnlineUsers", (users) => {
+        dispatch(setOnlineUsers(users));
+      });
+
+      return () => socketio.close();
+    } else {
+      if (socket) {
+        socket.close();
+        dispatch(setSocket(null));
+      }
+    }
+  }, [userData]);
 
   if (loading) return <p>loading .... </p>; // or spinner
   return (
