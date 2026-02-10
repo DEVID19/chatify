@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
-import Signup from "./pages/signup";
-import Login from "./pages/login";
+import Signup from "./pages/Signup";
+import Login from "./pages/Login";
 import useCurrentUser from "./customHooks/useCurrentUser";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
@@ -13,9 +13,7 @@ import { setOnlineUsers, setSocket } from "./redux/userSlice";
 
 function App() {
   useCurrentUser();
-  const { userData, loading, socket, onlineUsers } = useSelector(
-    (state) => state.user,
-  );
+  const { userData, loading, socket } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   useEffect(() => {
     if (userData) {
