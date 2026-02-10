@@ -22,6 +22,7 @@ const MessageArea = () => {
   let [frontendImage, setFrontendImage] = useState(null);
   let [backendImage, setBackendImage] = useState(null);
   let image = useRef();
+  //for scroll effect when new mwssage arrive 
   const messagesRef = useRef(null);
 
   const handleSendMessage = async (e) => {

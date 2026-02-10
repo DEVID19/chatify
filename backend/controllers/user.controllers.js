@@ -54,3 +54,22 @@ export const getOtherUsers = async (req, res) => {
     res.status(500).json({ message: `Unable to get other users${error}` });
   }
 };
+
+export const search = async (req, res) => {
+  try {
+    let { query } = req.query;
+    if (!query) {
+      return res.status(400).json({ message: "query is required " });
+    }
+    let users = await User.find({
+      $or: [
+        { fullName: { $regex: query, $options: "i" } },
+        { username: { $regex: query, $options: "i" } },
+      ],
+    });
+
+    return res.status(200).json(users)
+  } catch (error) {
+    res.status(500).json({ message: `Unable to search users${error}` });
+  }
+};

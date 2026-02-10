@@ -9,6 +9,7 @@ const userSlice = createSlice({
     loading: true,
     socket: null,
     onlineUsers: null,
+    searchData: null,
   },
   reducers: {
     setuserData: (state, action) => {
@@ -29,6 +30,9 @@ const userSlice = createSlice({
     setOnlineUsers: (state, action) => {
       state.onlineUsers = action.payload;
     },
+    setSearchData: (state, action) => {
+      state.searchData = action.payload;
+    },
   },
 });
 
@@ -39,5 +43,6 @@ export const {
   setSelectedUser,
   setOnlineUsers,
   setSocket,
+  setSearchData,
 } = userSlice.actions;
 export default userSlice.reducer;
