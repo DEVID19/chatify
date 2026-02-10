@@ -73,7 +73,9 @@ const Sidebar = () => {
             <div
               className="w-[95%] h-[70px] flex  items-center  gap-[20px] bg-white border-b-2 border-gray-400 px-[20px] cursor-pointer  hover:bg-[#63c2dc] "
               onClick={() => {
-                dispatch(setSelectedUser(user)) , setInput("") , setSearchActive(false)
+                (dispatch(setSelectedUser(user)),
+                  setInput(""),
+                  setSearchActive(false));
               }}
             >
               <div className="relative rounded-full   shadow-lg bg-white flex items-center justify-center">
