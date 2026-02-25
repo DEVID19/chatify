@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 
+
 const conversationSchema = new mongoose.Schema(
   {
     participants: [
@@ -14,6 +15,27 @@ const conversationSchema = new mongoose.Schema(
         ref: "Message",
       },
     ],
+
+    // ── Group fields ──────────────────────────
+
+    isGroup: {
+      type: Boolean,
+      default: false,
+    },
+    groupName: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    groupImage: {
+      type: String,
+      default: "",
+    },
+    admin: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
   { timestamps: true },
 );

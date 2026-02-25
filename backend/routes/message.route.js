@@ -2,6 +2,7 @@ import express from "express";
 import isAuth from "../middlewares/isAuth.js";
 import { upload } from "../middlewares/multer.js";
 import {
+  deleteMessage,
   getMessages,
   sendMessage,
 } from "../controllers/message.controllers.js";
@@ -16,5 +17,7 @@ MessageRouter.post(
 );
 
 MessageRouter.get("/get/:receiver", isAuth, getMessages);
+
+MessageRouter.delete("/delete/:messageId", isAuth, deleteMessage);
 
 export default MessageRouter;

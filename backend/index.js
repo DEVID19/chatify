@@ -7,16 +7,16 @@ import userRouter from "./routes/user.route.js";
 import cookieParser from "cookie-parser";
 import MessageRouter from "./routes/message.route.js";
 import { app, server } from "./socket/Socket.js";
-
-// import { app, server } from "./socket/socket.js"
+import groupRouter from "./routes/group.route.js";
+import aiRouter from "./routes/ai.route.js";
 
 dotenv.config();
 const port = process.env.PORT || 8000;
 
 app.use(
   cors({
-   // origin: "http://localhost:5173",
-    origin: "https://chatify-nos7.onrender.com",
+    origin: "http://localhost:5173",
+    // origin: "https://chatify-nos7.onrender.com",
     credentials: true,
   }),
 );
@@ -27,6 +27,8 @@ app.use(cookieParser());
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/message", MessageRouter);
+app.use("/api/group", groupRouter);
+app.use("/api/ai", aiRouter);
 
 server.listen(port, () => {
   connectDb();

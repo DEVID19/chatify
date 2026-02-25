@@ -1,4 +1,5 @@
 import uploadOnCloudinary from "../config/cloudinary.js";
+import Message from "../models/message.model.js";
 import User from "../models/user.model.js";
 
 export const currentUser = async (req, res) => {
@@ -45,13 +46,49 @@ export const editProfile = async (req, res) => {
 
 export const getOtherUsers = async (req, res) => {
   try {
+    const currentUserId = req.userId;
+
+    // Fetch self separately to pin at top
+    const selfUser = await User.findById(currentUserId).select("-password");
+
     const otherUsers = await User.find({
-      _id: { $ne: req.userId },
+      _id: { $ne: currentUserId },
     }).select("-password");
 
-    return res.status(200).json(otherUsers);
+    const usersWithLastMessage = await Promise.all(
+      otherUsers.map(async (user) => {
+        const lastMessage = await Message.findOne({
+          $or: [
+            { sender: currentUserId, receiver: user._id },
+            { sender: user._id, receiver: currentUserId },
+          ],
+        }).sort({ createdAt: -1 });
+
+        return {
+          ...user.toObject(),
+          lastMessageAt: lastMessage?.createdAt || null,
+          isSelf: false,
+        };
+      }),
+    );
+
+    usersWithLastMessage.sort((a, b) => {
+      if (!a.lastMessageAt && !b.lastMessageAt) return 0;
+      if (!a.lastMessageAt) return 1;
+      if (!b.lastMessageAt) return -1;
+      return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
+    });
+
+    // Build self entry — pinned at top always
+    const selfEntry = {
+      ...selfUser.toObject(),
+      isSelf: true,
+      lastMessageAt: null,
+    };
+
+    return res.status(200).json([selfEntry, ...usersWithLastMessage]);
   } catch (error) {
-    res.status(500).json({ message: `Unable to get other users${error}` });
+    res.status(500).json({ message: `Unable to get other users ${error}` });
   }
 };
 
@@ -68,7 +105,7 @@ export const search = async (req, res) => {
       ],
     });
 
-    return res.status(200).json(users)
+    return res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: `Unable to search users${error}` });
   }

@@ -1,8 +1,15 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import dp from "../assets/dp.png";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectedUser } from "../redux/userSlice";
+import {
+  setSelectedGroup,
+  setGroupMessages,
+  addGroupMessage,
+  moveGroupToTop,
+  deleteGroupMessage,
+} from "../redux/groupSlice";
 import { RiEmojiStickerLine } from "react-icons/ri";
 import { FaImages } from "react-icons/fa6";
 import { RiSendPlane2Fill } from "react-icons/ri";
@@ -11,190 +18,430 @@ import SenderMessage from "./SenderMessage";
 import ReceiverMessage from "./ReceiverMessage";
 import axios from "axios";
 import { server } from "../main";
-import { setMessages } from "../redux/messageSlice";
+import { addMessage, setMessages, deleteMessage } from "../redux/messageSlice";
+import { moveChatToTop } from "../redux/chatSlice";
 
 const MessageArea = () => {
-  let { selectedUser, userData, socket } = useSelector((state) => state.user);
-  let { messages } = useSelector((state) => state.messages);
-  let dispatch = useDispatch();
-  let [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  let [input, setInput] = useState("");
-  let [frontendImage, setFrontendImage] = useState(null);
-  let [backendImage, setBackendImage] = useState(null);
-  let image = useRef();
-  //for scroll effect when new mwssage arrive 
+  const { selectedUser, userData, socket } = useSelector((state) => state.user);
+  const { messages } = useSelector((state) => state.messages);
+  const { selectedGroup, groupMessages } = useSelector((state) => state.group);
+
+  const dispatch = useDispatch();
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [input, setInput] = useState("");
+  const [frontendImage, setFrontendImage] = useState(null);
+  const [backendImage, setBackendImage] = useState(null);
+  const image = useRef();
   const messagesRef = useRef(null);
 
+  const isSelfChat = selectedUser?._id === userData?._id;
+
+  // ── Fetch group messages when group is selected ─────────────
+  useEffect(() => {
+    if (!selectedGroup) return;
+    // Clear input when switching groups
+    setInput("");
+    setFrontendImage(null);
+    setBackendImage(null);
+
+    const fetchGroupMessages = async () => {
+      try {
+        const res = await axios.get(
+          `${server}/api/group/messages/${selectedGroup._id}`,
+          { withCredentials: true },
+        );
+        dispatch(setGroupMessages(res.data));
+      } catch (err) {
+        console.log("fetchGroupMessages error:", err);
+        dispatch(setGroupMessages([]));
+      }
+    };
+    fetchGroupMessages();
+  }, [selectedGroup]);
+
+  // ── Clear input when switching direct chats ─────────────────
+  useEffect(() => {
+    setInput("");
+    setFrontendImage(null);
+    setBackendImage(null);
+  }, [selectedUser]);
+
+  // ── Send direct message ─────────────────────────────────────
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!input && !backendImage) return;
 
     try {
-      let formData = new FormData();
+      const formData = new FormData();
       formData.append("message", input);
-      if (backendImage) {
-        formData.append("image", backendImage);
-      }
-      let result = await axios.post(
+      if (backendImage) formData.append("image", backendImage);
+
+      const result = await axios.post(
         `${server}/api/message/send/${selectedUser._id}`,
         formData,
         { withCredentials: true },
       );
+
       dispatch(setMessages([...messages, result.data]));
+      dispatch(
+        moveChatToTop({ userId: selectedUser._id, incrementUnread: false }),
+      );
       setFrontendImage(null);
       setBackendImage(null);
       setInput("");
     } catch (error) {
-      console.log(error);
+      console.log("handleSendMessage error:", error);
     }
   };
 
-  useEffect(() => {
-    if (!socket) {
-      return;
+  // ── Send group message ──────────────────────────────────────
+  const handleSendGroupMessage = async (e) => {
+    e.preventDefault();
+    if (!input && !backendImage) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("message", input);
+      if (backendImage) formData.append("image", backendImage);
+
+      const res = await axios.post(
+        `${server}/api/group/send/${selectedGroup._id}`,
+        formData,
+        { withCredentials: true },
+      );
+
+      dispatch(addGroupMessage(res.data));
+      dispatch(
+        moveGroupToTop({ groupId: selectedGroup._id, incrementUnread: false }),
+      );
+
+      setInput("");
+      setFrontendImage(null);
+      setBackendImage(null);
+    } catch (err) {
+      console.log("handleSendGroupMessage error:", err);
     }
-    socket.on("newMessage", (mess) => {
-      dispatch(setMessages([...messages, mess]));
-    });
+  };
 
-    return () => socket.off("newMessage");
-  }, [messages, setMessages]);
+  // ── Delete direct message  for personal chat delete ───────────────────────────────
+  const handleDeleteMessage = async (messageId) => {
+    try {
+      await axios.delete(`${server}/api/message/delete/${messageId}`, {
+        withCredentials: true,
+      });
+      dispatch(deleteMessage(messageId)); // remove from UI instantly for sender
+    } catch (error) {
+      console.log("handleDeleteMessage error:", error);
+    }
+  };
 
-  // to scroll onmessage appear
+  // ── Delete group message for group chat delete  ────────────────────────────────
+  const handleDeleteGroupMessage = async (messageId) => {
+    try {
+      await axios.delete(`${server}/api/group/delete/${messageId}`, {
+        withCredentials: true,
+      });
+      dispatch(deleteGroupMessage(messageId)); // remove from UI instantly for sender
+    } catch (error) {
+      console.log("handleDeleteGroupMessage error:", error);
+    }
+  };
+
+  // ── Socket — incoming direct messages   ──────────────────────
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewMessage = (mess) => {
+      dispatch(addMessage(mess));
+      // if there i am sender the unread count not shown below code is showing this logic
+      const iAmTheSender = mess.sender === userData._id;
+      const chatUserId = iAmTheSender ? mess.receiver : mess.sender;
+      dispatch(
+        moveChatToTop({
+          userId: chatUserId,
+          incrementUnread: !iAmTheSender,
+        }),
+      );
+    };
+
+    // ── receiver sees message disappear in real time in ui  ──
+    const handleMessageDeleted = (messageId) => {
+      dispatch(deleteMessage(messageId));
+    };
+
+    socket.on("newMessage", handleNewMessage);
+    socket.on("messageDeleted", handleMessageDeleted);
+
+    return () => {
+      socket.off("newMessage", handleNewMessage);
+      socket.off("messageDeleted", handleMessageDeleted);
+    };
+  }, [socket, userData._id, dispatch]);
+
+  // ── Socket — incoming group messages ──────────────────────
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewGroupMessage = (mess) => {
+      dispatch(addGroupMessage(mess.message || mess));
+      const iAmTheSender =
+        mess.sender?._id === userData._id || mess.sender === userData._id;
+      dispatch(
+        moveGroupToTop({
+          groupId: mess.groupId,
+          incrementUnread: !iAmTheSender,
+        }),
+      );
+    };
+
+    //  other members see message disappear in real time
+    const handleGroupMessageDeleted = ({ messageId }) => {
+      dispatch(deleteGroupMessage(messageId));
+    };
+
+    socket.on("newGroupMessage", handleNewGroupMessage);
+    socket.on("groupMessageDeleted", handleGroupMessageDeleted); // add this
+
+    return () => {
+      socket.off("newGroupMessage", handleNewGroupMessage);
+      socket.off("groupMessageDeleted", handleGroupMessageDeleted); // add this
+    };
+  }, [socket, userData._id, dispatch]);
+
+  // ── Auto scroll to bottom on new messages ──────────────────
   useEffect(() => {
     const el = messagesRef.current;
     if (!el) return;
-
     el.scrollTop = el.scrollHeight;
-  }, [messages]);
+  }, [messages, groupMessages]);
 
   const onEmojiClick = (emojiData) => {
-    setInput((prevInput) => prevInput + emojiData.emoji);
+    setInput((prev) => prev + emojiData.emoji);
     setShowEmojiPicker(false);
   };
 
   const handleImage = (e) => {
-    let file = e.target.files[0];
+    const file = e.target.files[0];
     if (file) {
       setBackendImage(file);
       setFrontendImage(URL.createObjectURL(file));
     }
   };
 
+  // Shared input form used by both direct and group chat
+  const renderInputForm = (onSubmit, placeholder) => (
+    <div className="w-full h-[100px] flex items-center justify-center flex-shrink-0">
+      {frontendImage && (
+        <img
+          src={frontendImage}
+          alt="preview"
+          className="w-[70px] absolute bottom-[105px] right-[20%] rounded-lg shadow-lg shadow-gray-400"
+        />
+      )}
+      <form
+        className="w-[95%] lg:w-[70%] h-[60px] bg-[#1797c2] rounded-full shadow-lg shadow-gray-400 flex items-center gap-[15px] px-[20px]"
+        onSubmit={onSubmit}
+      >
+        <div onClick={() => setShowEmojiPicker((p) => !p)}>
+          <RiEmojiStickerLine className="w-[25px] h-[25px] text-white cursor-pointer" />
+        </div>
+        <input
+          type="file"
+          accept="image/*"
+          hidden
+          ref={image}
+          onChange={handleImage}
+        />
+        <input
+          type="text"
+          placeholder={placeholder}
+          className="h-full w-full outline-none border-0 text-[18px] text-white bg-transparent placeholder-white"
+          onChange={(e) => setInput(e.target.value)}
+          value={input}
+        />
+        <div onClick={() => image.current.click()}>
+          <FaImages className="w-[25px] h-[25px] text-white cursor-pointer" />
+        </div>
+        {(input.length > 0 || backendImage) && (
+          <button type="submit">
+            <RiSendPlane2Fill className="w-[25px] h-[25px] text-white cursor-pointer" />
+          </button>
+        )}
+      </form>
+    </div>
+  );
+  //thamb
+  useEffect(() => {
+    if (groupMessages.length > 0) {
+      console.log("Group messages sample:", groupMessages[0]);
+      console.log("Sender object:", groupMessages[0].sender);
+      console.log("Sender profilePic:", groupMessages[0].sender?.profilePic);
+    }
+  }, [groupMessages]);
+
   return (
     <div
-      className={`lg:w-[70%] w-full h-full bg-slate-200 border-l-2 border-gray-300 overflow-hidden 
-        ${selectedUser ? "flex" : "hidden"} lg:flex  relative`}
+      className={`lg:w-[70%] w-full h-full bg-slate-200 border-l-2 border-gray-300 overflow-hidden
+        ${selectedUser || selectedGroup ? "flex" : "hidden"} lg:flex relative`}
     >
-      {selectedUser ? (
+      {/* ══ GROUP CHAT ══════════════════════════════════════════ */}
+      {selectedGroup && (
         <div className="w-full h-full flex flex-col">
-          <div className="w-full h-[100px] bg-[#1797c2] rounded-b-[30px] shadow-lg shadow-gray-400 flex items-center px-[20px]  gap-[20px] ">
+          {/* Group header */}
+          <div className="w-full h-[100px] bg-[#1797c2] rounded-b-[30px] shadow-lg shadow-gray-400 flex items-center px-[20px] gap-[20px] flex-shrink-0">
+            <div
+              className="cursor-pointer"
+              onClick={() => dispatch(setSelectedGroup(null))}
+            >
+              <IoIosArrowRoundBack className="w-[40px] h-[40px] text-white" />
+            </div>
+            <div className="w-[52px] h-[52px] rounded-full overflow-hidden bg-gray-200 shadow-lg flex-shrink-0">
+              <img
+                src={selectedGroup?.groupImage || dp}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-white font-semibold text-[20px] truncate">
+                {selectedGroup.groupName}
+              </h1>
+              <span className="text-white text-[12px] opacity-80">
+                {selectedGroup.participants.length} members
+              </span>
+            </div>
+          </div>
+
+          {/* Emoji picker */}
+          {showEmojiPicker && (
+            <div className="absolute bottom-[120px] left-[20px] z-[100]">
+              <EmojiPicker
+                width={250}
+                height={350}
+                onEmojiClick={onEmojiClick}
+              />
+            </div>
+          )}
+
+          {/* Group messages */}
+          <div
+            className="flex-1 overflow-y-auto px-[20px] py-[20px] flex flex-col gap-4"
+            ref={messagesRef}
+          >
+            {groupMessages.map((msg, index) => {
+              const isMyMessage =
+                msg.sender?._id === userData._id || msg.sender === userData._id;
+
+              return isMyMessage ? (
+                <SenderMessage
+                  key={msg._id || index}
+                  image={msg.image}
+                  message={msg.message}
+                  messageId={msg._id}
+                  onDelete={handleDeleteGroupMessage}
+                />
+              ) : (
+                // Show sender name above received messages in group
+                <div key={index} className="flex flex-col gap-[3px]">
+                  <span className="text-[12px] text-[#1797c2] font-semibold ml-3">
+                    {msg.sender?.fullName || msg.sender?.username}
+                  </span>
+                  <ReceiverMessage
+                    image={msg?.image}
+                    groupSenderImage={msg.sender?.image}
+                    message={msg.message}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {renderInputForm(handleSendGroupMessage, "Message group...")}
+        </div>
+      )}
+
+      {/* ══ DIRECT CHAT ═════════════════════════════════════════ */}
+      {selectedUser && !selectedGroup && (
+        <div className="w-full h-full flex flex-col">
+          {/* Direct chat header */}
+          <div className="w-full h-[100px] bg-[#1797c2] rounded-b-[30px] shadow-lg shadow-gray-400 flex items-center px-[20px] gap-[20px] flex-shrink-0">
             <div
               className="cursor-pointer"
               onClick={() => dispatch(setSelectedUser(null))}
             >
               <IoIosArrowRoundBack className="w-[40px] h-[40px] text-white" />
             </div>
-            <div className="w-[50px] h-[50px] rounded-full overflow-hidden flex justify-center items-center shadow-gray-500 shadow-lg bg-white">
+            <div className="w-[52px] h-[52px] rounded-full overflow-hidden shadow-gray-500 shadow-lg bg-white flex-shrink-0 flex items-center justify-center">
               <img
                 src={selectedUser?.image || dp}
                 alt=""
                 className="h-[100%]"
               />
             </div>
-            <h1 className="text-white  font-semibold text-[20px]">
-              {selectedUser?.fullname || selectedUser?.username}
-            </h1>
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-white font-semibold text-[20px] truncate">
+                {isSelfChat
+                  ? "You"
+                  : selectedUser?.fullName || selectedUser?.username}
+              </h1>
+              {isSelfChat && (
+                <span className="text-white text-[12px] opacity-80">
+                  Notes • Reminders • Ideas
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* emoji picker code below  */}
+          {/* Emoji picker */}
+          {showEmojiPicker && (
+            <div className="absolute bottom-[120px] left-[20px] z-[100]">
+              <EmojiPicker
+                width={250}
+                height={350}
+                onEmojiClick={onEmojiClick}
+              />
+            </div>
+          )}
 
+          {/* Direct messages */}
           <div
-            className="flex-1 overflow-y-auto px-[20px] py-[20px] flex flex-col gap-5 "
+            className="flex-1 overflow-y-auto px-[20px] py-[20px] flex flex-col gap-4"
             ref={messagesRef}
           >
-            {showEmojiPicker && (
-              <div className="absolute bottom-[120px] left-[20px] ">
-                <EmojiPicker
-                  width={250}
-                  height={350}
-                  className="shadow-lg z-[100]"
-                  onEmojiClick={onEmojiClick}
-                />
-              </div>
-            )}
-
             {messages &&
-              messages.map((messages) =>
-                messages.sender == userData._id ? (
+              messages.map((msg, index) =>
+                isSelfChat || msg.sender === userData._id ? (
                   <SenderMessage
-                    image={messages.image}
-                    message={messages.message}
+                    key={msg._id || index}
+                    image={msg.image}
+                    message={msg.message}
+                    messageId={msg._id}
+                    onDelete={handleDeleteMessage}
                   />
                 ) : (
                   <ReceiverMessage
-                    image={messages.image}
-                    message={messages.message}
+                    key={msg._id || index}
+                    image={msg.image}
+                    message={msg.message}
                   />
                 ),
               )}
-
-            {/* <SenderMessage />
-            <ReceiverMessage /> */}
           </div>
 
-          {/* form div  below  */}
-          <div className="w-full  h-[100px] lg:w-[98%]  flex items-center justify-center ">
-            <img
-              src={frontendImage}
-              alt=""
-              className="w-[80px] absolute bottom-[100px] right-[20%] rounded-lg shadow-lg shadow-gray-400 "
-            />
-
-            <form
-              className="w-[95%] lg:w-[70%] h-[60px] bg-[#1797c2] rounded-full shadow-lg shadow-gray-400   flex items-center gap-[20px] px-[20px]"
-              onSubmit={handleSendMessage}
-            >
-              <div
-                className=""
-                onClick={() => setShowEmojiPicker((prev) => !prev)}
-              >
-                <RiEmojiStickerLine className="w-[25px] h-[25px] text-white  cursor-pointer" />
-              </div>
-              {/* image input */}
-
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                ref={image}
-                onChange={handleImage}
-              />
-
-              <input
-                type="text"
-                placeholder="Message ..."
-                className="h-full w-full px-[10px] outline-none border-0 text-[19px] text-white bg-transparent placeholder-white"
-                onChange={(e) => setInput(e.target.value)}
-                value={input}
-              />
-              <div onClick={() => image.current.click()}>
-                <FaImages className="w-[25px] h-[25px] text-white cursor-pointer " />
-              </div>
-              {(input.length > 0 || backendImage != null) && (
-                <button type="submit">
-                  <RiSendPlane2Fill className="w-[25px] h-[25px] text-white cursor-pointer" />
-                </button>
-              )}
-            </form>
-          </div>
+          {renderInputForm(
+            handleSendMessage,
+            isSelfChat ? "Write a note..." : "Message...",
+          )}
         </div>
-      ) : (
-        <div className="w-full h-full flex flex-col items-center justify-center">
-          <h1 className="text-gray-700  font-bold text-[50px]">
+      )}
+
+      {/* ══ WELCOME SCREEN ══════════════════════════════════════ */}
+      {!selectedUser && !selectedGroup && (
+        <div className="w-full h-full flex flex-col items-center justify-center px-4">
+          <h1 className="text-gray-700 font-bold text-[35px] sm:text-[50px] text-center">
             Welcome to Chatify 👋
           </h1>
-          <span className="text-gray-700  font-semibold text-[30px]">
+          <span className="text-gray-700 font-semibold text-[20px] sm:text-[30px]">
             Chat Friendly ....
           </span>
         </div>
