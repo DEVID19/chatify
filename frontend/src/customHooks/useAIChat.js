@@ -57,6 +57,5 @@ export const useAIChat = () => {
     dispatch(setAIMessages([]));
   };
 
-  
   return { loadAIHistory, sendAIMessage, clearAIChat };
 };
