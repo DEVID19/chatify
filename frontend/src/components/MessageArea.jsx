@@ -24,7 +24,7 @@ import { addMessage, setMessages, deleteMessage } from "../redux/messageSlice";
 import { moveChatToTop } from "../redux/chatSlice";
 import { AI_USER } from "../constants/aiUser";
 import { MdDeleteSweep } from "react-icons/md";
-import { useAIChat } from "../customHooks/useAIChat.js";
+import { useAIChat } from "../customHooks/useAiChat";
 
 const MessageArea = () => {
   const { selectedUser, userData, socket } = useSelector((state) => state.user);
