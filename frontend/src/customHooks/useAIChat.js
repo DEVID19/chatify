@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { server } from "../main";
-import {addAIMessage, setAIMessages, setAITyping } from "../redux/aiSlice";
+import { addAIMessage, setAIMessages, setAITyping } from "../redux/aiSlice";
 
 const mapHistory = (history) =>
   history.map((h, i) => ({
@@ -52,5 +52,11 @@ export const useAIChat = () => {
     );
   };
 
-  return { loadAIHistory, sendAIMessage };
+  const clearAIChat = async () => {
+    await axios.delete(`${server}/api/ai/clear`, { withCredentials: true });
+    dispatch(setAIMessages([]));
+  };
+
+  
+  return { loadAIHistory, sendAIMessage, clearAIChat };
 };

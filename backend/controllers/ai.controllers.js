@@ -3,10 +3,10 @@ import AiConversation from "../models/aiConversation.model.js";
 import uploadOnCloudinary from "../config/cloudinary.js";
 import axios from "axios";
 
-// ── Initialize Gemini with your API key from .env ──────────────
-// GoogleGenerativeAI is the main class from the package
-// we create one instance and reuse it for all requests
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// // ── Initialize Gemini with your API key from .env ──────────────
+// // GoogleGenerativeAI is the main class from the package
+// // we create one instance and reuse it for all requests
+// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // ── Helper function — converts image URL to Base64 ────────────
 // Gemini cannot visit URLs directly like a browser
@@ -31,6 +31,11 @@ const urlToBase64 = async (imageUrl) => {
 // ── Main AI chat controller ────────────────────────────────────
 export const chatWithAI = async (req, res) => {
   try {
+    // ── Initialize Gemini with your API key from .env ──────────────
+    // GoogleGenerativeAI is the main class from the package
+    // we create one instance and reuse it for all requests
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
     // get logged in user id from isAuth middleware
     const userId = req.userId;
 
@@ -68,7 +73,7 @@ export const chatWithAI = async (req, res) => {
     // ── Step 2: Initialize Gemini model with chat history ─────
     // gemini-1.5-flash is fast and free tier
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
 
       // systemInstruction gives AI its personality
       // this runs before every conversation — AI always remembers this
@@ -83,8 +88,13 @@ export const chatWithAI = async (req, res) => {
 
     // startChat loads the full history so AI remembers previous messages
     // this is the key to making AI remember context across messages
+
     const chat = model.startChat({
-      history: aiConversation.history, // all previous messages loaded here
+      // clean _id fields added by MongoDB — Gemini rejects unknown fields
+      history: aiConversation.history.map((h) => ({
+        role: h.role,
+        parts: h.parts.map((p) => ({ text: p.text })),
+      })),
     });
 
     // ── Step 3: Build the message to send to Gemini ───────────
@@ -105,7 +115,7 @@ export const chatWithAI = async (req, res) => {
       // Gemini's required format for inline images
       messageParts.push({
         inlineData: {
-          data: base64,       // the actual image as Base64 string
+          data: base64, // the actual image as Base64 string
           mimeType: mimeType, // tells Gemini what type of image it is
         },
       });
@@ -144,7 +154,6 @@ export const chatWithAI = async (req, res) => {
       reply: aiReply,
       imageUrl: cloudinaryImageUrl, // null if no image was sent
     });
-
   } catch (error) {
     console.log("AI controller error:", error);
     res.status(500).json({ message: `AI error: ${error.message}` });
@@ -166,8 +175,23 @@ export const getAIHistory = async (req, res) => {
 
     // return history array so frontend can display old messages
     return res.status(200).json(aiConversation.history);
-
   } catch (error) {
     res.status(500).json({ message: `Unable to get AI history: ${error}` });
+  }
+};
+
+
+
+
+export const clearAIHistory = async (req, res) => {
+  try {
+    const userId = req.userId;
+    await AiConversation.findOneAndUpdate(
+      { userId },
+      { history: [] }
+    );
+    return res.status(200).json({ message: "Chat cleared" });
+  } catch (error) {
+    res.status(500).json({ message: `Error clearing chat: ${error}` });
   }
 };

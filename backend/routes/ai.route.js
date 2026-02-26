@@ -1,7 +1,7 @@
 import express from "express";
 import isAuth from "../middlewares/isAuth.js";
 import { upload } from "../middlewares/multer.js";
-import { chatWithAI, getAIHistory } from "../controllers/ai.controllers.js";
+import { chatWithAI, clearAIHistory, getAIHistory } from "../controllers/ai.controllers.js";
 
 const aiRouter = express.Router();
 
@@ -11,5 +11,8 @@ aiRouter.post("/chat", isAuth, upload.single("image"), chatWithAI);
 
 // GET — load previous AI chat history when user opens AI chat
 aiRouter.get("/history", isAuth, getAIHistory);
+
+// ai.route.js
+aiRouter.delete("/clear", isAuth, clearAIHistory);
 
 export default aiRouter;
