@@ -190,14 +190,14 @@ const Sidebar = () => {
         <div className="w-full flex items-center gap-[15px] overflow-x-auto py-[10px]">
           {!searchActive && (
             <div
-              className="w-14 h-14 rounded-full border-2 mt-[10px] border-white shadow-lg bg-white shadow-gray-500 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform flex-shrink-0"
+              className="w-14 h-14 rounded-full border-2 mt-[10px] border-white bg-white shadow-gray-500 shadow-md flex items-center justify-center cursor-pointer hover:scale-110 transition-transform flex-shrink-0"
               onClick={() => setSearchActive(true)}
             >
               <IoIosSearch className="w-7 h-7" />
             </div>
           )}
           {searchActive && (
-            <form className="w-full h-[55px] bg-white shadow-gray-500 shadow-lg flex items-center gap-[10px] mt-[10px] rounded-full overflow-hidden px-[20px]">
+            <form className="w-full h-[55px] bg-white shadow-gray-500 shadow-md flex items-center gap-[10px] mt-[10px] rounded-full overflow-hidden px-[20px]">
               <IoIosSearch className="w-[22px] h-[22px] text-gray-700" />
               <input
                 type="text"
@@ -223,7 +223,7 @@ const Sidebar = () => {
                 onlineUsers?.includes(user._id) && (
                   <div
                     key={user._id}
-                    className="relative rounded-full shadow-gray-500 shadow-lg bg-white flex items-center justify-center mt-[10px] cursor-pointer flex-shrink-0 hover:scale-110 transition-transform"
+                    className="relative rounded-full shadow-gray-500 shadow-md  bg-white flex items-center justify-center mt-[10px] cursor-pointer flex-shrink-0 hover:scale-110 transition-transform"
                     onClick={() => {
                       dispatch(setSelectedUser(user));
                       dispatch(setSelectedGroup(null));

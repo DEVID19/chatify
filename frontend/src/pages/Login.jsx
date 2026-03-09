@@ -31,7 +31,7 @@ const Login = () => {
         },
         { withCredentials: true },
       );
-      dispatch(setuserData(result.data));
+      dispatch(setuserData(result.data.user));
       dispatch(setSelectedUser(null));
       navigate("/");
       setEmail("");
