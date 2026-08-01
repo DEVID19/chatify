@@ -202,10 +202,18 @@ const MessageArea = () => {
   useEffect(() => {
     if (!socket) return;
     const handleNewMessage = (mess) => {
-      dispatch(addMessage(mess));
       const iAmTheSender = mess.sender === userData._id;
       const chatUserId = iAmTheSender ? mess.receiver : mess.sender;
-      dispatch(moveChatToTop({ userId: chatUserId, incrementUnread: !iAmTheSender }));
+
+      // Only add message to screen if this chat is currently open
+      if (selectedUser?._id === chatUserId) {
+        dispatch(addMessage(mess));
+      }
+
+      // Always update sidebar order & unread badge
+      dispatch(
+        moveChatToTop({ userId: chatUserId, incrementUnread: !iAmTheSender }),
+      );
     };
     const handleMessageDeleted = (messageId) => {
       dispatch(deleteMessage(messageId));
@@ -216,7 +224,7 @@ const MessageArea = () => {
       socket.off("newMessage", handleNewMessage);
       socket.off("messageDeleted", handleMessageDeleted);
     };
-  }, [socket, userData._id, dispatch]);
+  }, [socket, userData._id, selectedUser, dispatch]);
 
   // ── Socket — group messages ──────────────────────────────
   useEffect(() => {
