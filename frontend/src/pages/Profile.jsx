@@ -232,7 +232,7 @@ const Profile = () => {
                 style={{
                   background: "var(--color-overlay)",
                   border: "1px solid var(--color-border)",
-                  color: "var(--color-text-muted)",
+                  color: "var(--color-text-primary)",
                   fontFamily: "var(--font-sans)",
                 }}
               />
@@ -254,7 +254,7 @@ const Profile = () => {
                 style={{
                   background: "var(--color-overlay)",
                   border: "1px solid var(--color-border)",
-                  color: "var(--color-text-muted)",
+                  color: "var(--color-text-primary)",
                   fontFamily: "var(--font-sans)",
                 }}
               />
