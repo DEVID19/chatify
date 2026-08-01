@@ -8,9 +8,11 @@ const useGetMessages = () => {
   let dispatch = useDispatch();
   let { selectedUser, userData } = useSelector((state) => state.user);
   useEffect(() => {
+    // Clear immediately so old messages never flash on screen when switching chats
+    dispatch(setMessages([]));
+
     const fetchMessages = async () => {
       if (!selectedUser?._id) {
-        dispatch(setMessages([]));
         return;
       }
 
