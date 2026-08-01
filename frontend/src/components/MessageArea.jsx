@@ -26,6 +26,37 @@ import { AI_USER } from "../constants/aiUser";
 import { MdDeleteSweep } from "react-icons/md";
 import { useAIChat } from "../customHooks/useAIChat.js";
 
+// ── Shared avatar component ──────────────────────────────────
+const AVATAR_COLORS = [
+  "#5B5FEF", "#10B981", "#F59E0B", "#EF4444",
+  "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16",
+];
+function getAvatarColor(str = "") {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+function getInitials(str = "") {
+  const parts = str.trim().split(/\s+/);
+  return parts.length >= 2
+    ? (parts[0][0] + parts[1][0]).toUpperCase()
+    : str.slice(0, 2).toUpperCase();
+}
+
+const HeaderAvatar = ({ src, name = "", size = 40 }) => {
+  const color = getAvatarColor(name);
+  return (
+    <div
+      className="rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-white text-sm"
+      style={{ width: size, height: size, background: src ? undefined : color }}
+    >
+      {src
+        ? <img src={src} alt={name} className="w-full h-full object-cover" />
+        : getInitials(name)
+      }
+    </div>
+  );
+};
 
 const MessageArea = () => {
   const { selectedUser, userData, socket } = useSelector((state) => state.user);
@@ -46,7 +77,7 @@ const MessageArea = () => {
   const isSelfChat = selectedUser?._id === userData?._id;
   const isAIChat = selectedUser?._id === AI_USER._id;
 
-  // ── Load AI history when AI chat opens ──────────────────────
+  // ── Load AI history ──────────────────────────────────────
   useEffect(() => {
     if (!isAIChat) return;
     setInput("");
@@ -55,13 +86,12 @@ const MessageArea = () => {
     loadAIHistory();
   }, [isAIChat]);
 
-  // ── Fetch group messages when group selected ─────────────────
+  // ── Fetch group messages ─────────────────────────────────
   useEffect(() => {
     if (!selectedGroup) return;
     setInput("");
     setFrontendImage(null);
     setBackendImage(null);
-
     const fetchGroupMessages = async () => {
       try {
         const res = await axios.get(
@@ -77,7 +107,7 @@ const MessageArea = () => {
     fetchGroupMessages();
   }, [selectedGroup]);
 
-  // ── Clear input on direct chat switch ───────────────────────
+  // ── Clear input on direct chat switch ───────────────────
   useEffect(() => {
     if (selectedUser && !isAIChat) {
       setInput("");
@@ -86,19 +116,15 @@ const MessageArea = () => {
     }
   }, [selectedUser]);
 
-  // ── Send AI message ──────────────────────────────────────────
+  // ── Send handlers (logic unchanged) ─────────────────────
   const handleSendAIMessage = async (e) => {
     e.preventDefault();
     if (!input && !backendImage) return;
-
     const textToSend = input;
     const imageToSend = backendImage;
-
-    // Clear input immediately for snappy UX
     setInput("");
     setFrontendImage(null);
     setBackendImage(null);
-
     try {
       await sendAIMessage({ text: textToSend, image: imageToSend });
     } catch (error) {
@@ -106,26 +132,20 @@ const MessageArea = () => {
     }
   };
 
-  // ── Send direct message ──────────────────────────────────────
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!input && !backendImage) return;
-
     try {
       const formData = new FormData();
       formData.append("message", input);
       if (backendImage) formData.append("image", backendImage);
-
       const result = await axios.post(
         `${server}/api/message/send/${selectedUser._id}`,
         formData,
         { withCredentials: true },
       );
-
       dispatch(setMessages([...messages, result.data]));
-      dispatch(
-        moveChatToTop({ userId: selectedUser._id, incrementUnread: false }),
-      );
+      dispatch(moveChatToTop({ userId: selectedUser._id, incrementUnread: false }));
       setFrontendImage(null);
       setBackendImage(null);
       setInput("");
@@ -134,26 +154,20 @@ const MessageArea = () => {
     }
   };
 
-  // ── Send group message ───────────────────────────────────────
   const handleSendGroupMessage = async (e) => {
     e.preventDefault();
     if (!input && !backendImage) return;
-
     try {
       const formData = new FormData();
       formData.append("message", input);
       if (backendImage) formData.append("image", backendImage);
-
       const res = await axios.post(
         `${server}/api/group/send/${selectedGroup._id}`,
         formData,
         { withCredentials: true },
       );
-
       dispatch(addGroupMessage(res.data));
-      dispatch(
-        moveGroupToTop({ groupId: selectedGroup._id, incrementUnread: false }),
-      );
+      dispatch(moveGroupToTop({ groupId: selectedGroup._id, incrementUnread: false }));
       setInput("");
       setFrontendImage(null);
       setBackendImage(null);
@@ -162,7 +176,6 @@ const MessageArea = () => {
     }
   };
 
-  // ── Delete direct message ────────────────────────────────────
   const handleDeleteMessage = async (messageId) => {
     try {
       await axios.delete(`${server}/api/message/delete/${messageId}`, {
@@ -174,7 +187,6 @@ const MessageArea = () => {
     }
   };
 
-  // ── Delete group message ─────────────────────────────────────
   const handleDeleteGroupMessage = async (messageId) => {
     try {
       await axios.delete(`${server}/api/group/delete/${messageId}`, {
@@ -186,62 +198,47 @@ const MessageArea = () => {
     }
   };
 
-  // ── Socket — direct messages ─────────────────────────────────
+  // ── Socket — direct messages ─────────────────────────────
   useEffect(() => {
     if (!socket) return;
-
     const handleNewMessage = (mess) => {
       dispatch(addMessage(mess));
       const iAmTheSender = mess.sender === userData._id;
       const chatUserId = iAmTheSender ? mess.receiver : mess.sender;
-      dispatch(
-        moveChatToTop({ userId: chatUserId, incrementUnread: !iAmTheSender }),
-      );
+      dispatch(moveChatToTop({ userId: chatUserId, incrementUnread: !iAmTheSender }));
     };
-
     const handleMessageDeleted = (messageId) => {
       dispatch(deleteMessage(messageId));
     };
-
     socket.on("newMessage", handleNewMessage);
     socket.on("messageDeleted", handleMessageDeleted);
-
     return () => {
       socket.off("newMessage", handleNewMessage);
       socket.off("messageDeleted", handleMessageDeleted);
     };
   }, [socket, userData._id, dispatch]);
 
-  // ── Socket — group messages ──────────────────────────────────
+  // ── Socket — group messages ──────────────────────────────
   useEffect(() => {
     if (!socket) return;
-
     const handleNewGroupMessage = (mess) => {
       dispatch(addGroupMessage(mess.message || mess));
       const iAmTheSender =
         mess.sender?._id === userData._id || mess.sender === userData._id;
-      dispatch(
-        moveGroupToTop({
-          groupId: mess.groupId,
-          incrementUnread: !iAmTheSender,
-        }),
-      );
+      dispatch(moveGroupToTop({ groupId: mess.groupId, incrementUnread: !iAmTheSender }));
     };
-
     const handleGroupMessageDeleted = ({ messageId }) => {
       dispatch(deleteGroupMessage(messageId));
     };
-
     socket.on("newGroupMessage", handleNewGroupMessage);
     socket.on("groupMessageDeleted", handleGroupMessageDeleted);
-
     return () => {
       socket.off("newGroupMessage", handleNewGroupMessage);
       socket.off("groupMessageDeleted", handleGroupMessageDeleted);
     };
   }, [socket, userData._id, dispatch]);
 
-  // ── Auto scroll to latest message ───────────────────────────
+  // ── Auto scroll ──────────────────────────────────────────
   useEffect(() => {
     const el = messagesRef.current;
     if (!el) return;
@@ -261,43 +258,130 @@ const MessageArea = () => {
     }
   };
 
-  // ── Shared input bar (used by all chat types) ────────────────
+  // ── Chat header shared styles ────────────────────────────
+  const ChatHeader = ({ onBack, avatar, name, subtitle, rightEl }) => (
+    <div
+      className="flex items-center gap-3 px-4 h-16 flex-shrink-0"
+      style={{
+        background: "var(--color-surface)",
+        borderBottom: "1px solid var(--color-border)",
+      }}
+    >
+      <button
+        onClick={onBack}
+        className="w-8 h-8 rounded-lg flex items-center justify-center transition-all lg:hidden"
+        style={{ color: "var(--color-text-secondary)" }}
+        onMouseEnter={e => { e.currentTarget.style.background = "var(--color-elevated)"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+      >
+        <IoIosArrowRoundBack className="w-6 h-6" />
+      </button>
+      {avatar}
+      <div className="flex-1 min-w-0">
+        <p
+          className="text-[15px] font-semibold leading-tight truncate"
+          style={{ color: "var(--color-text-primary)" }}
+        >
+          {name}
+        </p>
+        {subtitle && (
+          <p
+            className="text-xs truncate"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            {subtitle}
+          </p>
+        )}
+      </div>
+      {rightEl}
+    </div>
+  );
+
+  // ── Shared input bar ─────────────────────────────────────
   const renderInputForm = (onSubmit, placeholder) => (
-    <div className="w-full h-[100px] flex items-center justify-center flex-shrink-0">
+    <div
+      className="flex-shrink-0 px-4 py-3"
+      style={{ borderTop: "1px solid var(--color-border)" }}
+    >
       {frontendImage && (
-        <img
-          src={frontendImage}
-          alt="preview"
-          className="w-[70px] absolute bottom-[105px] right-[20%] rounded-lg shadow-lg shadow-gray-400"
-        />
+        <div className="mb-2 relative inline-block">
+          <img
+            src={frontendImage}
+            alt="preview"
+            className="w-16 h-16 rounded-lg object-cover"
+            style={{ border: "1px solid var(--color-border)" }}
+          />
+          <button
+            onClick={() => { setFrontendImage(null); setBackendImage(null); }}
+            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] flex items-center justify-center font-bold"
+            style={{ background: "var(--color-danger)", color: "#fff" }}
+          >
+            ×
+          </button>
+        </div>
       )}
       <form
-        className="w-[95%] lg:w-[70%] h-[60px] bg-[#1797c2] rounded-full shadow-lg shadow-gray-400 flex items-center gap-[15px] px-[20px]"
+        className="flex items-center gap-2"
         onSubmit={onSubmit}
       >
-        <div onClick={() => setShowEmojiPicker((p) => !p)}>
-          <RiEmojiStickerLine className="w-[25px] h-[25px] text-white cursor-pointer" />
-        </div>
-        <input
-          type="file"
-          accept="image/*"
-          hidden
-          ref={image}
-          onChange={handleImage}
-        />
-        <input
-          type="text"
-          placeholder={placeholder}
-          className="h-full w-full outline-none border-0 text-[18px] text-white bg-transparent placeholder-white"
-          onChange={(e) => setInput(e.target.value)}
-          value={input}
-        />
-        <div onClick={() => image.current.click()}>
-          <FaImages className="w-[25px] h-[25px] text-white cursor-pointer" />
+        <div
+          className="input-container flex-1 flex items-center gap-2 px-4 h-11 rounded-full"
+          style={{
+            background: "var(--color-elevated)",
+            border: "1px solid var(--color-border)",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setShowEmojiPicker((p) => !p)}
+            className="transition-colors"
+            style={{ color: "var(--color-text-muted)" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--color-accent)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--color-text-muted)"; }}
+          >
+            <RiEmojiStickerLine className="w-[18px] h-[18px]" />
+          </button>
+          <input
+            type="file"
+            accept="image/*"
+            hidden
+            ref={image}
+            onChange={handleImage}
+          />
+          <input
+            type="text"
+            placeholder={placeholder}
+            className="flex-1 bg-transparent text-[14px] outline-none border-0"
+            style={{
+              color: "var(--color-text-primary)",
+              fontFamily: "var(--font-sans)",
+            }}
+            onChange={(e) => setInput(e.target.value)}
+            value={input}
+          />
+          <button
+            type="button"
+            onClick={() => image.current.click()}
+            className="transition-colors"
+            style={{ color: "var(--color-text-muted)" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--color-accent)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--color-text-muted)"; }}
+          >
+            <FaImages className="w-[16px] h-[16px]" />
+          </button>
         </div>
         {(input.length > 0 || backendImage) && (
-          <button type="submit">
-            <RiSendPlane2Fill className="w-[25px] h-[25px] text-white cursor-pointer" />
+          <button
+            type="submit"
+            className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
+            style={{
+              background: "var(--color-accent)",
+              boxShadow: "var(--shadow-accent)",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--color-accent-hover)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "var(--color-accent)"; }}
+          >
+            <RiSendPlane2Fill className="w-[18px] h-[18px] text-white" />
           </button>
         )}
       </form>
@@ -306,153 +390,129 @@ const MessageArea = () => {
 
   return (
     <div
-      className={`lg:w-[70%] w-full h-full bg-slate-200 border-l-2 border-gray-300 overflow-hidden
-        ${selectedUser || selectedGroup ? "flex" : "hidden"} lg:flex relative`}
+      className={`flex-1 h-full overflow-hidden
+        ${selectedUser || selectedGroup ? "flex" : "hidden"} lg:flex relative flex-col`}
+      style={{ background: "var(--color-base)" }}
     >
-      {/* ══ AI CHAT ════════════════════════════════════════════ */}
+      {/* Emoji picker */}
+      {showEmojiPicker && (
+        <div className="absolute bottom-[80px] left-4 z-[100]">
+          <EmojiPicker
+            width={280}
+            height={360}
+            onEmojiClick={onEmojiClick}
+            theme="dark"
+          />
+        </div>
+      )}
+
+      {/* ══ AI CHAT ══════════════════════════════════════════ */}
       {isAIChat && (
         <div className="w-full h-full flex flex-col">
-          {/* AI Header */}
-          <div className="w-full h-[100px] bg-gradient-to-r from-[#19cdff] to-[#1797c2] rounded-b-[30px] shadow-lg shadow-gray-400 flex items-center px-[20px] gap-[20px] flex-shrink-0">
-            <div
-              className="cursor-pointer"
-              onClick={() => dispatch(setSelectedUser(null))}
-            >
-              <IoIosArrowRoundBack className="w-[40px] h-[40px] text-white" />
-            </div>
-
-            {/* AI avatar in header */}
-            <div className="w-[52px] h-[52px] rounded-full bg-white flex items-center justify-center shadow-lg flex-shrink-0">
-              <span className="text-[#1797c2] text-[16px] font-extrabold tracking-tight">
-                AI
-              </span>
-            </div>
-
-            <div className="flex flex-col min-w-0 flex-1">
-              <h1 className="text-white font-bold text-[20px]">Chatify AI</h1>
-              <span className="text-white text-[12px] opacity-80">
-                {isTyping ? "✦ thinking..." : "Ask anything • Images • Help"}
-              </span>
-            </div>
-
-            {/* Online pulse + clear button */}
-            <div className="flex items-center gap-[10px] flex-shrink-0">
-              <span className="w-[9px] h-[9px] rounded-full bg-green-300 animate-pulse" />
-              <span className="text-white text-[12px] opacity-80">Online</span>
+          <ChatHeader
+            onBack={() => dispatch(setSelectedUser(null))}
+            avatar={
               <div
-                onClick={clearAIChat}
-                className="cursor-pointer ml-[4px]"
-                title="Clear chat"
+                className="w-9 h-9 rounded-full flex items-center justify-center font-extrabold text-xs text-white flex-shrink-0"
+                style={{ background: "linear-gradient(135deg, var(--color-accent), #818cf8)" }}
               >
-                <MdDeleteSweep className="w-[26px] h-[26px] text-white opacity-70 hover:opacity-100 transition-opacity" />
+                AI
               </div>
-            </div>
-          </div>
-
-          {/* Emoji picker */}
-          {showEmojiPicker && (
-            <div className="absolute bottom-[120px] left-[20px] z-[100]">
-              <EmojiPicker
-                width={250}
-                height={350}
-                onEmojiClick={onEmojiClick}
-              />
-            </div>
-          )}
-
-          {/* AI messages list */}
+            }
+            name="Chatify AI"
+            subtitle={isTyping ? "✦ thinking..." : "Ask anything • Images • Help"}
+            rightEl={
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ background: "var(--color-online)", boxShadow: "0 0 6px var(--color-online)" }}
+                  />
+                  <span className="text-xs" style={{ color: "var(--color-online)" }}>Online</span>
+                </div>
+                <button
+                  onClick={clearAIChat}
+                  title="Clear chat"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+                  style={{ color: "var(--color-text-muted)" }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = "rgba(239,68,68,0.1)";
+                    e.currentTarget.style.color = "var(--color-danger)";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "var(--color-text-muted)";
+                  }}
+                >
+                  <MdDeleteSweep className="w-5 h-5" />
+                </button>
+              </div>
+            }
+          />
           <div
-            className="flex-1 overflow-y-auto px-[20px] py-[20px] flex flex-col gap-4"
+            className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4"
             ref={messagesRef}
           >
-            {/* Empty state */}
             {aiMessages.length === 0 && !isTyping && (
-              <div className="flex flex-col items-center justify-center h-full gap-4 opacity-60 select-none">
-                <div className="w-[72px] h-[72px] rounded-full bg-gradient-to-br from-[#19cdff] to-[#1797c2] flex items-center justify-center shadow-lg">
-                  <span className="text-white text-[22px] font-extrabold">
-                    AI
-                  </span>
+              <div className="flex flex-col items-center justify-center h-full gap-4 select-none">
+                <div
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-xl font-extrabold"
+                  style={{
+                    background: "linear-gradient(135deg, var(--color-accent), #818cf8)",
+                    boxShadow: "var(--shadow-accent)",
+                  }}
+                >
+                  AI
                 </div>
-                <h2 className="text-gray-600 font-bold text-[22px]">
+                <h2
+                  className="font-bold text-xl"
+                  style={{ color: "var(--color-text-primary)" }}
+                >
                   Chatify AI
                 </h2>
-                <p className="text-gray-400 text-[14px] text-center max-w-[260px] leading-relaxed">
-                  Ask me anything — questions, ideas, code, or send an image to
-                  analyze.
+                <p
+                  className="text-sm text-center max-w-[240px] leading-relaxed"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
+                  Ask me anything — questions, ideas, code, or send an image to analyze.
                 </p>
               </div>
             )}
-
-            {/* Messages */}
             {aiMessages.map((msg) =>
               msg.sender === "USER" ? (
-                <AISenderMessage
-                  key={msg._id}
-                  message={msg.message}
-                  image={msg.image}
-                />
+                <AISenderMessage key={msg._id} message={msg.message} image={msg.image} />
               ) : (
-                <AIReceiverMessage
-                  key={msg._id}
-                  message={msg.message}
-                  image={msg.image}
-                />
+                <AIReceiverMessage key={msg._id} message={msg.message} image={msg.image} />
               ),
             )}
-
-            {/* Typing dots while waiting for AI */}
             {isTyping && <TypingIndicator />}
           </div>
-
           {renderInputForm(handleSendAIMessage, "Ask Chatify AI anything...")}
         </div>
       )}
 
-      {/* ══ GROUP CHAT ══════════════════════════════════════════ */}
+      {/* ══ GROUP CHAT ═══════════════════════════════════════ */}
       {selectedGroup && (
         <div className="w-full h-full flex flex-col">
-          <div className="w-full h-[100px] bg-[#1797c2] rounded-b-[30px] shadow-lg shadow-gray-400 flex items-center px-[20px] gap-[20px] flex-shrink-0">
-            <div
-              className="cursor-pointer"
-              onClick={() => dispatch(setSelectedGroup(null))}
-            >
-              <IoIosArrowRoundBack className="w-[40px] h-[40px] text-white" />
-            </div>
-            <div className="w-[52px] h-[52px] rounded-full overflow-hidden bg-gray-200 shadow-lg flex-shrink-0">
-              <img
-                src={selectedGroup?.groupImage || dp}
-                alt=""
-                className="w-full h-full object-cover"
+          <ChatHeader
+            onBack={() => dispatch(setSelectedGroup(null))}
+            avatar={
+              <HeaderAvatar
+                src={selectedGroup?.groupImage}
+                name={selectedGroup.groupName || ""}
+                size={36}
               />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <h1 className="text-white font-semibold text-[20px] truncate">
-                {selectedGroup.groupName}
-              </h1>
-              <span className="text-white text-[12px] opacity-80">
-                {selectedGroup.participants.length} members
-              </span>
-            </div>
-          </div>
-
-          {showEmojiPicker && (
-            <div className="absolute bottom-[120px] left-[20px] z-[100]">
-              <EmojiPicker
-                width={250}
-                height={350}
-                onEmojiClick={onEmojiClick}
-              />
-            </div>
-          )}
-
+            }
+            name={selectedGroup.groupName}
+            subtitle={`${selectedGroup.participants.length} members`}
+          />
           <div
-            className="flex-1 overflow-y-auto px-[20px] py-[20px] flex flex-col gap-4"
+            className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-3"
             ref={messagesRef}
           >
             {groupMessages.map((msg, index) => {
               const isMyMessage =
                 msg.sender?._id === userData._id || msg.sender === userData._id;
-
               return isMyMessage ? (
                 <SenderMessage
                   key={msg._id || index}
@@ -462,8 +522,11 @@ const MessageArea = () => {
                   onDelete={handleDeleteGroupMessage}
                 />
               ) : (
-                <div key={index} className="flex flex-col gap-[3px]">
-                  <span className="text-[12px] text-[#1797c2] font-semibold ml-3">
+                <div key={index} className="flex flex-col gap-1">
+                  <span
+                    className="text-[11px] font-semibold ml-11"
+                    style={{ color: "var(--color-accent)" }}
+                  >
                     {msg.sender?.fullName || msg.sender?.username}
                   </span>
                   <ReceiverMessage
@@ -475,54 +538,41 @@ const MessageArea = () => {
               );
             })}
           </div>
-
           {renderInputForm(handleSendGroupMessage, "Message group...")}
         </div>
       )}
 
-      {/* ══ DIRECT CHAT ═════════════════════════════════════════ */}
+      {/* ══ DIRECT CHAT ══════════════════════════════════════ */}
       {selectedUser && !selectedGroup && !isAIChat && (
         <div className="w-full h-full flex flex-col">
-          <div className="w-full h-[100px] bg-[#1797c2] rounded-b-[30px] shadow-lg shadow-gray-400 flex items-center px-[20px] gap-[20px] flex-shrink-0">
-            <div
-              className="cursor-pointer"
-              onClick={() => dispatch(setSelectedUser(null))}
-            >
-              <IoIosArrowRoundBack className="w-[40px] h-[40px] text-white" />
-            </div>
-            <div className="w-[52px] h-[52px] rounded-full overflow-hidden shadow-gray-500 shadow-lg bg-white flex-shrink-0 flex items-center justify-center">
-              <img
-                src={selectedUser?.image || dp}
-                alt=""
-                className="h-[100%]"
-              />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <h1 className="text-white font-semibold text-[20px] truncate">
-                {isSelfChat
-                  ? "You"
-                  : selectedUser?.fullName || selectedUser?.username}
-              </h1>
-              {isSelfChat && (
-                <span className="text-white text-[12px] opacity-80">
-                  Notes • Reminders • Ideas
-                </span>
-              )}
-            </div>
-          </div>
-
-          {showEmojiPicker && (
-            <div className="absolute bottom-[120px] left-[20px] z-[100]">
-              <EmojiPicker
-                width={250}
-                height={350}
-                onEmojiClick={onEmojiClick}
-              />
-            </div>
-          )}
-
+          <ChatHeader
+            onBack={() => dispatch(setSelectedUser(null))}
+            avatar={
+              <div className="relative flex-shrink-0">
+                <HeaderAvatar
+                  src={selectedUser?.image}
+                  name={
+                    isSelfChat
+                      ? "You"
+                      : selectedUser?.fullName || selectedUser?.username || ""
+                  }
+                  size={36}
+                />
+              </div>
+            }
+            name={
+              isSelfChat
+                ? "You"
+                : selectedUser?.fullName || selectedUser?.username
+            }
+            subtitle={
+              isSelfChat
+                ? "Notes • Reminders • Ideas"
+                : undefined
+            }
+          />
           <div
-            className="flex-1 overflow-y-auto px-[20px] py-[20px] flex flex-col gap-4"
+            className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-3"
             ref={messagesRef}
           >
             {messages &&
@@ -544,7 +594,6 @@ const MessageArea = () => {
                 ),
               )}
           </div>
-
           {renderInputForm(
             handleSendMessage,
             isSelfChat ? "Write a note..." : "Message...",
@@ -552,15 +601,30 @@ const MessageArea = () => {
         </div>
       )}
 
-      {/* ══ WELCOME SCREEN ══════════════════════════════════════ */}
+      {/* ══ WELCOME SCREEN ═══════════════════════════════════ */}
       {!selectedUser && !selectedGroup && (
-        <div className="w-full h-full flex flex-col items-center justify-center px-4">
-          <h1 className="text-gray-700 font-bold text-[35px] sm:text-[50px] text-center">
-            Welcome to Chatify 👋
-          </h1>
-          <span className="text-gray-700 font-semibold text-[20px] sm:text-[30px]">
-            Chat Friendly ....
-          </span>
+        <div className="w-full h-full flex flex-col items-center justify-center px-8 select-none">
+          <div
+            className="w-20 h-20 rounded-3xl flex items-center justify-center mb-6"
+            style={{
+              background: "var(--color-accent-muted)",
+              border: "1px solid rgba(91,95,239,0.2)",
+            }}
+          >
+            <img src="/logo.svg" alt="Chatify" className="w-12 h-12 rounded-xl" />
+          </div>
+          <h2
+            className="text-2xl font-bold mb-2 text-center"
+            style={{ color: "var(--color-text-primary)" }}
+          >
+            Your messages
+          </h2>
+          <p
+            className="text-sm text-center max-w-[260px] leading-relaxed"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            Select a conversation from the sidebar to start chatting, or find someone new with Search.
+          </p>
         </div>
       )}
     </div>

@@ -1,31 +1,35 @@
 // ── AI reply bubble + typing indicator ──────────────────────
-// White bubble with left-side AI avatar badge
-// Distinct from the blue ReceiverMessage used in regular chats
-// so users always know they're talking to the AI
 
 // ── Typing indicator — three bouncing dots ───────────────────
 export const TypingIndicator = () => (
-  <div className="flex items-end gap-[10px]">
+  <div className="flex items-end gap-2 msg-enter">
     {/* AI avatar */}
-    <div className="w-[38px] h-[38px] rounded-full flex-shrink-0 bg-gradient-to-br from-[#19cdff] to-[#1797c2] flex items-center justify-center shadow-md shadow-gray-400">
-      <span className="text-white text-[12px] font-extrabold tracking-tight">
-        AI
-      </span>
+    <div
+      className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-extrabold text-[10px] text-white"
+      style={{ background: "linear-gradient(135deg, var(--color-accent), #818cf8)" }}
+    >
+      AI
     </div>
 
     {/* Dots bubble */}
-    <div className="bg-white border border-gray-200 px-[18px] py-[14px] rounded-2xl rounded-bl-none shadow-md shadow-gray-300 flex items-center gap-[6px]">
+    <div
+      className="px-4 py-3 rounded-2xl rounded-bl-sm flex items-center gap-1.5"
+      style={{
+        background: "var(--color-elevated)",
+        border: "1px solid var(--color-border)",
+      }}
+    >
       <span
-        className="w-[8px] h-[8px] bg-[#1797c2] rounded-full animate-bounce opacity-80"
-        style={{ animationDelay: "0ms", animationDuration: "0.9s" }}
+        className="w-1.5 h-1.5 rounded-full animate-bounce"
+        style={{ background: "var(--color-accent)", animationDelay: "0ms", animationDuration: "0.9s" }}
       />
       <span
-        className="w-[8px] h-[8px] bg-[#1797c2] rounded-full animate-bounce opacity-80"
-        style={{ animationDelay: "180ms", animationDuration: "0.9s" }}
+        className="w-1.5 h-1.5 rounded-full animate-bounce"
+        style={{ background: "var(--color-accent)", animationDelay: "180ms", animationDuration: "0.9s" }}
       />
       <span
-        className="w-[8px] h-[8px] bg-[#1797c2] rounded-full animate-bounce opacity-80"
-        style={{ animationDelay: "360ms", animationDuration: "0.9s" }}
+        className="w-1.5 h-1.5 rounded-full animate-bounce"
+        style={{ background: "var(--color-accent)", animationDelay: "360ms", animationDuration: "0.9s" }}
       />
     </div>
   </div>
@@ -33,30 +37,40 @@ export const TypingIndicator = () => (
 
 // ── AI reply message bubble ───────────────────────────────────
 const AIReceiverMessage = ({ message, image }) => (
-  <div className="flex items-end gap-[10px]">
+  <div className="flex items-end gap-2 msg-enter">
     {/* AI avatar badge */}
-    <div className="w-[38px] h-[38px] rounded-full flex-shrink-0 bg-gradient-to-br from-[#19cdff] to-[#1797c2] flex items-center justify-center shadow-md shadow-gray-400">
-      <span className="text-white text-[12px] font-extrabold tracking-tight">
-        AI
-      </span>
+    <div
+      className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-extrabold text-[10px] text-white"
+      style={{ background: "linear-gradient(135deg, var(--color-accent), #818cf8)" }}
+    >
+      AI
     </div>
 
-    {/* Reply bubble — white to distinguish from user's blue */}
-    <div className="w-fit max-w-[70%] bg-white border border-gray-200 px-[18px] py-[12px] text-gray-800 rounded-2xl rounded-bl-none shadow-md shadow-gray-300 flex flex-col gap-[8px] text-[17px]">
-      {/* Subtle AI label inside bubble */}
-      <span className="text-[10px] font-bold text-[#19cdff] uppercase tracking-widest -mb-1">
+    {/* Reply bubble — dark surface, distinct from user's indigo */}
+    <div
+      className="max-w-[68%] px-4 py-2.5 rounded-2xl rounded-bl-sm flex flex-col gap-2 text-[14px] leading-relaxed"
+      style={{
+        background: "var(--color-elevated)",
+        border: "1px solid var(--color-border)",
+        color: "var(--color-text-primary)",
+      }}
+    >
+      {/* Subtle AI label */}
+      <span
+        className="text-[9px] font-bold uppercase tracking-widest -mb-0.5"
+        style={{ color: "var(--color-accent)" }}
+      >
         Chatify AI
       </span>
-
       {image && (
         <img
           src={image}
           alt="ai response"
-          className="w-[180px] rounded-xl object-cover"
+          className="max-w-[220px] rounded-xl object-cover"
         />
       )}
       {message && (
-        <span className="leading-relaxed text-gray-700">{message}</span>
+        <span className="leading-relaxed">{message}</span>
       )}
     </div>
   </div>

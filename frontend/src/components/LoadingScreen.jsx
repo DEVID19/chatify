@@ -1,53 +1,82 @@
 import React from "react";
-import { RiChat3Fill } from "react-icons/ri";
 
 const LoadingScreen = () => {
   return (
-    <div className="fixed inset-0 w-full h-screen bg-slate-900 flex flex-col items-center justify-center overflow-hidden z-50 select-none">
-      {/* Ambient Background Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] bg-gradient-to-tr from-cyan-500/20 via-sky-400/15 to-blue-600/20 rounded-full blur-[100px] animate-pulse" />
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] bg-cyan-400/20 rounded-full blur-[70px] animate-ping duration-[3000ms]" />
+    <div
+      style={{ background: "var(--color-base)" }}
+      className="fixed inset-0 w-full h-screen flex flex-col items-center justify-center overflow-hidden z-50 select-none"
+    >
+      {/* Ambient glow blobs */}
+      <div
+        style={{ background: "var(--color-accent-glow)" }}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full blur-[120px] opacity-30 animate-pulse"
+      />
 
-      {/* Main Glass Card */}
-      <div className="relative z-10 flex flex-col items-center p-10 sm:p-12 rounded-3xl bg-slate-900/60 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-cyan-950/50 max-w-sm w-[90%]">
-        
-        {/* Icon Container */}
-        <div className="relative flex items-center justify-center mb-8">
-          <div className="absolute inset-0 rounded-2xl bg-cyan-400/30 blur-xl animate-pulse" />
+      {/* Card */}
+      <div
+        style={{
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          boxShadow: "var(--shadow-lg)",
+        }}
+        className="relative z-10 flex flex-col items-center px-12 py-14 rounded-3xl max-w-sm w-[90%]"
+      >
+        {/* Logo container with glow ring */}
+        <div className="relative mb-8">
+          <div
+            style={{ background: "var(--color-accent-glow)" }}
+            className="absolute inset-0 rounded-2xl blur-xl scale-110"
+          />
           <img
             src="/logo.svg"
-            alt="Chatify Logo"
-            className="w-20 h-20 rounded-2xl shadow-lg shadow-cyan-500/30 border border-white/20 transform hover:scale-105 transition-transform"
+            alt="Chatify"
+            className="relative w-20 h-20 rounded-2xl"
+            style={{
+              border: "1px solid var(--color-border-hover)",
+              boxShadow: "var(--shadow-accent)",
+            }}
           />
         </div>
 
-        {/* Brand Name */}
-        <div className="flex items-center gap-1.5 mb-2">
-          <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-sky-400">
-            Chatify
-          </h1>
-          <span className="inline-block w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-        </div>
-
-        {/* Tagline */}
-        <p className="text-slate-400 text-sm font-medium tracking-wide mb-8 text-center">
-          Connecting to network...
+        {/* Brand */}
+        <h1
+          style={{ color: "var(--color-text-primary)", fontFamily: "var(--font-sans)" }}
+          className="text-3xl font-extrabold tracking-tight mb-1"
+        >
+          Chatify
+        </h1>
+        <p
+          style={{ color: "var(--color-text-muted)", fontFamily: "var(--font-sans)" }}
+          className="text-sm font-medium tracking-wide mb-8"
+        >
+          Connecting to network
         </p>
 
-        {/* Loading Progress Bar */}
-        <div className="w-full space-y-3">
-          <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-white/5">
-            <div className="h-full bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-500 rounded-full w-full origin-left animate-[loadingBar_1.8s_ease-in-out_infinite]" />
-          </div>
-          
-          <div className="flex items-center justify-center gap-2 text-xs font-medium text-cyan-300/80 tracking-wider uppercase">
-            <span>Loading</span>
-            <span className="flex gap-1">
-              <span className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-              <span className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-              <span className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce" />
-            </span>
-          </div>
+        {/* Progress bar */}
+        <div
+          style={{ background: "var(--color-elevated)", border: "1px solid var(--color-border)" }}
+          className="w-full h-1 rounded-full overflow-hidden"
+        >
+          <div
+            style={{ background: "var(--color-accent)" }}
+            className="h-full rounded-full animate-[loadingBar_1.8s_ease-in-out_infinite]"
+          />
+        </div>
+
+        {/* Status row */}
+        <div className="flex items-center gap-2 mt-4">
+          <span
+            style={{ background: "var(--color-accent)" }}
+            className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.3s]"
+          />
+          <span
+            style={{ background: "var(--color-accent)" }}
+            className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.15s]"
+          />
+          <span
+            style={{ background: "var(--color-accent)" }}
+            className="w-1.5 h-1.5 rounded-full animate-bounce"
+          />
         </div>
       </div>
     </div>

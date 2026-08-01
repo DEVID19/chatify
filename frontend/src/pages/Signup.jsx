@@ -4,7 +4,6 @@ import { server } from "../main";
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { setuserData } from "../redux/userSlice";
-import { RiChat3Fill } from "react-icons/ri";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -14,24 +13,19 @@ const Signup = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  let dispatch = useDispatch();
+  const dispatch = useDispatch();
+
   const handleSignup = async (e) => {
     try {
       setLoading(true);
       e.preventDefault();
-      // Handle signup logic here
       if (!username || !email || !password) {
         alert("Please fill in all fields");
         return;
       }
-
-      let result = await axios.post(
+      const result = await axios.post(
         `${server}/api/auth/signup`,
-        {
-          username,
-          email,
-          password,
-        },
+        { username, email, password },
         { withCredentials: true },
       );
       dispatch(setuserData(result.data));
@@ -49,76 +43,197 @@ const Signup = () => {
   };
 
   return (
-    <div className="w-full h-[100vh] bg-slate-200 flex items-center justify-center">
-      <div className="w-full max-w-[500px] h-[600px] bg-white rounded-lg  shadow-lg shadow-gray-400 flex flex-col gap-[30px]">
-        <div className="w-full h-[200px] bg-[#19cdff] rounded-b-[30%] shadow-lg shadow-gray-400 flex flex-col items-center justify-center gap-2">
-          <img
-            src="/logo.svg"
-            alt="Chatify Logo"
-            className="w-14 h-14 rounded-2xl shadow-md border border-white/40"
-          />
-          <h1 className="text-[30px] font-bold text-center text-gray-600">
-            Welcome to <span className="text-white">Chatify</span>
-          </h1>
-        </div>
-        <form
-          className="w-full  flex flex-col gap-[20px] items-center justify-center "
-          onSubmit={handleSignup}
-        >
-          <input
-            type="text"
-            placeholder="username"
-            className="w-[90%] h-[50px] outline-none border-2 border-[#20c7ff] px-[20px] py-[20px]  bg-white rounded-lg shadow-gray-200  shadow-lg text-gray-700 text-[19px]"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <input
-            type="email"
-            placeholder="email"
-            className="w-[90%] h-[50px] outline-none border-2 border-[#20c7ff] px-[20px] py-[20px]  bg-white rounded-lg shadow-gray-200  shadow-lg text-gray-700 text-[19px]"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-
-          <div className="w-[90%] h-[50px] border-2 border-[#20c7ff] overflow-hidden rounded-lg shadow-gray-200  shadow-lg  relative">
-            <input
-              type={show ? "text" : "password"}
-              placeholder="password"
-              className="w-full h-full outline-none  px-[20px] py-[20px]  bg-white  text-gray-700 text-[19px]"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+    <div
+      className="w-full min-h-screen flex"
+      style={{ background: "var(--color-base)", fontFamily: "var(--font-sans)" }}
+    >
+      {/* ── Left branding panel ─────────────────────────────── */}
+      <div
+        className="hidden lg:flex lg:w-[45%] flex-col items-center justify-center p-12 relative overflow-hidden"
+        style={{ background: "var(--color-surface)", borderRight: "1px solid var(--color-border)" }}
+      >
+        <div
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full blur-[100px] opacity-20"
+          style={{ background: "var(--color-accent)" }}
+        />
+        <div className="relative z-10 flex flex-col items-center text-center max-w-sm">
+          <div className="relative mb-8">
+            <div
+              className="absolute inset-0 rounded-3xl blur-xl opacity-40"
+              style={{ background: "var(--color-accent)" }}
             />
-            <span
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer text-[19px] text-[#20c7ff] font-semibold "
-              onClick={() => setShow((prev) => !prev)}
-            >
-              {`${show ? "Hide" : "Show"}`}
-            </span>
+            <img
+              src="/logo.svg"
+              alt="Chatify"
+              className="relative w-24 h-24 rounded-3xl"
+              style={{
+                border: "1px solid var(--color-border-hover)",
+                boxShadow: "var(--shadow-accent)",
+              }}
+            />
           </div>
-          {/* error message  */}
-          {error && (
-            <p className="text-red-500 text-md font-bold items-center justify-center text-center">
-              {error}
-            </p>
-          )}
-          <button
-            className="px-[20px] py-[10px] bg-[#20c7ff]  rounded-2xl shadow-gray-400 shadow-lg w-[200px] mt-[20px] cursor-pointer text-[20px] font-semibold hover:shadow-inner"
-            disabled={loading}
+          <h1
+            className="text-4xl font-extrabold tracking-tight mb-3"
+            style={{ color: "var(--color-text-primary)" }}
           >
-            {loading ? "Loading..." : "Sign up"}
-          </button>
-
-          <p>
-            Already Have An Account ?
-            <span
-              className="text-[#20c7ff] text-bold cursor-pointer"
-              onClick={() => navigate("/login")}
-            >
-              {" "}
-              Login
-            </span>
+            Join Chatify
+          </h1>
+          <p
+            className="text-base leading-relaxed"
+            style={{ color: "var(--color-text-secondary)" }}
+          >
+            Create your free account and start messaging friends, groups, and even our AI assistant.
           </p>
-        </form>
+          <div className="flex flex-wrap gap-2 mt-8 justify-center">
+            {["Free forever", "Private", "AI assistant", "Groups"].map((f) => (
+              <span
+                key={f}
+                className="px-3 py-1 rounded-full text-xs font-semibold"
+                style={{
+                  background: "var(--color-accent-muted)",
+                  color: "var(--color-accent)",
+                  border: "1px solid rgba(91,95,239,0.2)",
+                }}
+              >
+                {f}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Right form panel ────────────────────────────────── */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12">
+        {/* Mobile logo */}
+        <div className="flex items-center gap-2.5 mb-10 lg:hidden">
+          <img src="/logo.svg" alt="Chatify" className="w-9 h-9 rounded-xl" />
+          <span
+            className="text-xl font-extrabold tracking-tight"
+            style={{ color: "var(--color-text-primary)" }}
+          >
+            Chatify
+          </span>
+        </div>
+
+        <div className="w-full max-w-sm">
+          <h2
+            className="text-2xl font-bold mb-1"
+            style={{ color: "var(--color-text-primary)" }}
+          >
+            Create account
+          </h2>
+          <p
+            className="text-sm mb-8"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            It&apos;s free and takes less than a minute
+          </p>
+
+          <form className="flex flex-col gap-4" onSubmit={handleSignup}>
+            {/* Username */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                className="text-xs font-semibold uppercase tracking-wide"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
+                Username
+              </label>
+              <input
+                id="signup-username"
+                type="text"
+                placeholder="your_username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="chat-input h-11 px-4 w-full"
+                autoComplete="username"
+              />
+            </div>
+
+            {/* Email */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                className="text-xs font-semibold uppercase tracking-wide"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
+                Email
+              </label>
+              <input
+                id="signup-email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="chat-input h-11 px-4 w-full"
+                autoComplete="email"
+              />
+            </div>
+
+            {/* Password */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                className="text-xs font-semibold uppercase tracking-wide"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id="signup-password"
+                  type={show ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="chat-input h-11 px-4 pr-16 w-full"
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShow((p) => !p)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold"
+                  style={{ color: "var(--color-accent)" }}
+                >
+                  {show ? "Hide" : "Show"}
+                </button>
+              </div>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <p
+                className="text-sm font-medium text-center"
+                style={{ color: "var(--color-danger)" }}
+              >
+                {error}
+              </p>
+            )}
+
+            {/* Submit */}
+            <button
+              id="signup-submit"
+              type="submit"
+              disabled={loading}
+              className="btn-accent h-11 w-full mt-2 text-sm rounded-lg"
+            >
+              {loading ? "Creating account..." : "Create account"}
+            </button>
+          </form>
+
+          <p
+            className="text-sm text-center mt-6"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            Already have an account?{" "}
+            <button
+              onClick={() => navigate("/login")}
+              className="font-semibold transition-colors"
+              style={{ color: "var(--color-accent)" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--color-accent-hover)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--color-accent)"; }}
+            >
+              Sign in
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -10,20 +10,20 @@ import { server } from "../main";
 import { setuserData } from "../redux/userSlice";
 
 const Profile = () => {
-  let { userData } = useSelector((state) => state.user);
-  let navigate = useNavigate();
-  let [fullName, setFullName] = useState(userData?.fullName || "");
-  let [status, setStatus] = useState(userData?.status || "");
-  let [frontendImage, setFrontendImage] = useState(userData?.image || dp);
-  let [backendImage, setBackendImage] = useState(null);
-  let dispatch = useDispatch();
-  let [saving, setSaving] = useState(false);
-  let [editingName, setEditingName] = useState(false);
-  let [editingStatus, setEditingStatus] = useState(false);
-  let image = useRef();
+  const { userData } = useSelector((state) => state.user);
+  const navigate = useNavigate();
+  const [fullName, setFullName] = useState(userData?.fullName || "");
+  const [status, setStatus] = useState(userData?.status || "");
+  const [frontendImage, setFrontendImage] = useState(userData?.image || dp);
+  const [backendImage, setBackendImage] = useState(null);
+  const dispatch = useDispatch();
+  const [saving, setSaving] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [editingStatus, setEditingStatus] = useState(false);
+  const image = useRef();
 
   const handleImage = (e) => {
-    let file = e.target.files[0];
+    const file = e.target.files[0];
     if (file) {
       setBackendImage(file);
       setFrontendImage(URL.createObjectURL(file));
@@ -34,13 +34,11 @@ const Profile = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      let formData = new FormData();
+      const formData = new FormData();
       formData.append("fullName", fullName);
       formData.append("status", status);
-      if (backendImage) {
-        formData.append("image", backendImage);
-      }
-      let result = await axios.put(`${server}/api/user/profile`, formData, {
+      if (backendImage) formData.append("image", backendImage);
+      const result = await axios.put(`${server}/api/user/profile`, formData, {
         withCredentials: true,
       });
       setSaving(false);
@@ -62,178 +60,224 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-100 via-blue-50 to-cyan-50 flex items-center justify-center p-4 sm:p-6 md:p-8">
-      {/* Back Button */}
-      <div className="fixed top-4 left-4 sm:top-6 sm:left-6 z-10">
-        <button
-          onClick={() => navigate("/")}
-          className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group hover:bg-[#20c7ff] cursor-pointer"
-        >
-          <IoIosArrowRoundBack className="w-7 h-7 sm:w-8 sm:h-8 text-gray-700 group-hover:text-white transition-colors" />
-        </button>
-      </div>
+    <div
+      className="min-h-screen w-full flex items-center justify-center p-4"
+      style={{ background: "var(--color-base)", fontFamily: "var(--font-sans)" }}
+    >
+      {/* Back button */}
+      <button
+        onClick={() => navigate("/")}
+        className="fixed top-4 left-4 w-10 h-10 rounded-xl flex items-center justify-center transition-all z-10"
+        style={{
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          color: "var(--color-text-secondary)",
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.background = "var(--color-elevated)";
+          e.currentTarget.style.color = "var(--color-text-primary)";
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.background = "var(--color-surface)";
+          e.currentTarget.style.color = "var(--color-text-secondary)";
+        }}
+      >
+        <IoIosArrowRoundBack className="w-6 h-6" />
+      </button>
 
-      {/* Main Profile Card */}
-      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden">
-        <div className="h-32 sm:h-40 bg-gradient-to-r from-[#20c7ff] via-[#40d4ff] to-[#20c7ff] relative">
-          <div className="absolute inset-0 bg-black opacity-5"></div>
+      {/* Profile card */}
+      <div
+        className="w-full max-w-md rounded-2xl overflow-hidden"
+        style={{
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          boxShadow: "var(--shadow-lg)",
+        }}
+      >
+        {/* Banner */}
+        <div
+          className="h-28 relative"
+          style={{ background: "linear-gradient(135deg, var(--color-accent), #818cf8)" }}
+        >
+          <div className="absolute inset-0 opacity-10" style={{ background: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
         </div>
 
-        <div className="relative px-6 sm:px-8 pb-8">
-          <div className="flex flex-col items-center -mt-16 sm:-mt-20">
+        <div className="px-6 pb-6">
+          {/* Avatar */}
+          <div className="flex justify-between items-end -mt-14 mb-5">
             <div
               className="relative group cursor-pointer"
               onClick={() => image.current.click()}
             >
-              <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-white shadow-xl overflow-hidden bg-white">
+              <div
+                className="w-24 h-24 rounded-2xl overflow-hidden"
+                style={{
+                  border: "3px solid var(--color-surface)",
+                  boxShadow: "var(--shadow-md)",
+                }}
+              >
                 <img
                   src={frontendImage}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="absolute bottom-2 right-2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#20c7ff] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <IoCameraOutline className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-              </div>
-              <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-10 rounded-full transition-all duration-300 flex items-center justify-center">
-                <span className="text-white text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  Change Photo
-                </span>
+              <div
+                className="absolute inset-0 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{ background: "rgba(0,0,0,0.5)" }}
+              >
+                <IoCameraOutline className="w-7 h-7 text-white" />
               </div>
             </div>
-
-            {/* Hidden File Input */}
-            <input
-              type="file"
-              accept="image/*"
-              ref={image}
-              hidden
-              onChange={handleImage}
-            />
           </div>
+          <input
+            type="file"
+            accept="image/*"
+            ref={image}
+            hidden
+            onChange={handleImage}
+          />
 
-          {/* Form Section */}
-          <form onSubmit={handleProfile} className="mt-8 space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-600 ml-1">
+          {/* Form */}
+          <form onSubmit={handleProfile} className="space-y-4">
+            {/* Full Name */}
+            <div className="space-y-1.5">
+              <label
+                className="text-xs font-semibold uppercase tracking-wide"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
                 Full Name
               </label>
-              <div className="relative group">
+              <div className="relative">
                 <input
                   type="text"
                   placeholder="Enter your name"
-                  className={`w-full px-4 py-3 sm:py-4 pr-12 bg-gray-50 border-2 rounded-xl outline-none transition-all duration-300 text-gray-700 text-base sm:text-lg ${
-                    editingName
-                      ? "border-[#20c7ff] bg-white shadow-lg"
-                      : "border-gray-200 focus:border-[#20c7ff] focus:bg-white"
-                  }`}
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   disabled={!editingName}
+                  className="w-full h-11 px-4 pr-12 rounded-lg text-sm transition-all outline-none"
+                  style={{
+                    background: editingName ? "var(--color-elevated)" : "var(--color-overlay)",
+                    border: `1px solid ${editingName ? "var(--color-accent)" : "var(--color-border)"}`,
+                    color: "var(--color-text-primary)",
+                    fontFamily: "var(--font-sans)",
+                    boxShadow: editingName ? "0 0 0 3px var(--color-accent-muted)" : "none",
+                    cursor: editingName ? "text" : "default",
+                  }}
                 />
                 <button
                   type="button"
                   onClick={() => setEditingName(!editingName)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg bg-[#20c7ff] bg-opacity-0 hover:bg-opacity-10 flex items-center justify-center transition-all duration-300 group"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                  style={{
+                    color: editingName ? "var(--color-accent)" : "var(--color-text-muted)",
+                  }}
                 >
-                  {editingName ? (
-                    <MdCheck className="w-5 h-5 text-[#20c7ff]" />
-                  ) : (
-                    <MdEdit className="w-5 h-5 text-gray-400 group-hover:text-[#20c7ff]" />
-                  )}
+                  {editingName ? <MdCheck className="w-4 h-4" /> : <MdEdit className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-600 ml-1">
+            {/* Status */}
+            <div className="space-y-1.5">
+              <label
+                className="text-xs font-semibold uppercase tracking-wide"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
                 Status
               </label>
-              <div className="relative group">
+              <div className="relative">
                 <input
                   type="text"
-                  placeholder="Enter your status"
-                  className={`w-full px-4 py-3 sm:py-4 pr-12 bg-gray-50 border-2 rounded-xl outline-none transition-all duration-300 text-gray-700 text-base sm:text-lg ${
-                    editingStatus
-                      ? "border-[#20c7ff] bg-white shadow-lg"
-                      : "border-gray-200 focus:border-[#20c7ff] focus:bg-white"
-                  }`}
+                  placeholder="What's on your mind?"
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                   disabled={!editingStatus}
+                  className="w-full h-11 px-4 pr-12 rounded-lg text-sm transition-all outline-none"
+                  style={{
+                    background: editingStatus ? "var(--color-elevated)" : "var(--color-overlay)",
+                    border: `1px solid ${editingStatus ? "var(--color-accent)" : "var(--color-border)"}`,
+                    color: "var(--color-text-primary)",
+                    fontFamily: "var(--font-sans)",
+                    boxShadow: editingStatus ? "0 0 0 3px var(--color-accent-muted)" : "none",
+                    cursor: editingStatus ? "text" : "default",
+                  }}
                 />
                 <button
                   type="button"
                   onClick={() => setEditingStatus(!editingStatus)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg bg-[#20c7ff] bg-opacity-0 hover:bg-opacity-10 flex items-center justify-center transition-all duration-300 group"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                  style={{
+                    color: editingStatus ? "var(--color-accent)" : "var(--color-text-muted)",
+                  }}
                 >
-                  {editingStatus ? (
-                    <MdCheck className="w-5 h-5 text-[#20c7ff]" />
-                  ) : (
-                    <MdEdit className="w-5 h-5 text-gray-400 group-hover:text-[#20c7ff]" />
-                  )}
+                  {editingStatus ? <MdCheck className="w-4 h-4" /> : <MdEdit className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-600 ml-1">
+            {/* Username (read only) */}
+            <div className="space-y-1.5">
+              <label
+                className="text-xs font-semibold uppercase tracking-wide"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
                 Username
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  readOnly
-                  className="w-full px-4 py-3 sm:py-4 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none text-gray-500 text-base sm:text-lg cursor-not-allowed"
-                  value={userData?.username || ""}
-                />
-              </div>
+              <input
+                type="text"
+                readOnly
+                value={userData?.username || ""}
+                className="w-full h-11 px-4 rounded-lg text-sm outline-none cursor-not-allowed"
+                style={{
+                  background: "var(--color-overlay)",
+                  border: "1px solid var(--color-border)",
+                  color: "var(--color-text-muted)",
+                  fontFamily: "var(--font-sans)",
+                }}
+              />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-600 ml-1">
-                Email Address
+            {/* Email (read only) */}
+            <div className="space-y-1.5">
+              <label
+                className="text-xs font-semibold uppercase tracking-wide"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
+                Email
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  readOnly
-                  className="w-full px-4 py-3 sm:py-4 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none text-gray-500 text-base sm:text-lg cursor-not-allowed"
-                  value={userData?.email || ""}
-                />
-              </div>
+              <input
+                type="text"
+                readOnly
+                value={userData?.email || ""}
+                className="w-full h-11 px-4 rounded-lg text-sm outline-none cursor-not-allowed"
+                style={{
+                  background: "var(--color-overlay)",
+                  border: "1px solid var(--color-border)",
+                  color: "var(--color-text-muted)",
+                  fontFamily: "var(--font-sans)",
+                }}
+              />
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
+            {/* Action buttons */}
+            <div className="flex gap-3 pt-2">
               {(editingName || editingStatus) && (
                 <button
                   type="button"
                   onClick={handleCancelEdit}
-                  className="flex-1 px-6 py-3 sm:py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold text-base sm:text-lg transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                  className="btn-ghost flex-1 h-11 text-sm rounded-lg flex items-center justify-center gap-2"
                 >
-                  <MdClose className="w-5 h-5" />
+                  <MdClose className="w-4 h-4" />
                   Cancel
                 </button>
               )}
               <button
                 type="submit"
-                disabled={
-                  saving || (!editingName && !editingStatus && !backendImage)
-                }
-                className={`flex-1 px-6 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg transition-all duration-300 shadow-md hover:shadow-xl ${
-                  saving || (!editingName && !editingStatus && !backendImage)
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-gradient-to-r from-[#20c7ff] to-[#40d4ff] text-white hover:from-[#1ab8f0] hover:to-[#30c4f0]"
-                }`}
+                disabled={saving || (!editingName && !editingStatus && !backendImage)}
+                className="btn-accent flex-1 h-11 text-sm rounded-lg"
               >
-                {saving ? (
-                  <span className="flex items-center justify-center gap-2">
-                    Saving...
-                  </span>
-                ) : (
-                  "Save Profile"
-                )}
+                {saving ? "Saving..." : "Save profile"}
               </button>
             </div>
           </form>

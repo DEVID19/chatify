@@ -7,7 +7,7 @@ import { RxCross2 } from "react-icons/rx";
 import { IoIosSearch } from "react-icons/io";
 import { FaCamera } from "react-icons/fa";
 
-const MAX_MEMBERS = 19; // 19 + admin = 20 total
+const MAX_MEMBERS = 19;
 
 const CreateGroupModal = ({ onClose, onGroupCreated }) => {
   const { otherUsers } = useSelector((state) => state.user);
@@ -19,23 +19,16 @@ const CreateGroupModal = ({ onClose, onGroupCreated }) => {
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Only show non-self users as selectable
   const selectableUsers = otherUsers?.filter((u) => !u.isSelf) || [];
-
-  // Filter by search input
   const filteredUsers = selectableUsers.filter((user) => {
     const name = (user.fullName || user.username || "").toLowerCase();
     return name.includes(searchInput.toLowerCase());
   });
-
   const isLimitReached = selectedMembers.length >= MAX_MEMBERS;
 
   const toggleMember = (userId) => {
     setSelectedMembers((prev) => {
-      if (prev.includes(userId)) {
-        return prev.filter((id) => id !== userId);
-      }
-      // Block adding more if limit reached
+      if (prev.includes(userId)) return prev.filter((id) => id !== userId);
       if (prev.length >= MAX_MEMBERS) return prev;
       return [...prev, userId];
     });
@@ -52,18 +45,15 @@ const CreateGroupModal = ({ onClose, onGroupCreated }) => {
   const handleCreate = async () => {
     if (!groupName.trim()) return alert("Please enter a group name");
     if (selectedMembers.length < 2) return alert("Select at least 2 members");
-
     setLoading(true);
     try {
       const formData = new FormData();
       formData.append("groupName", groupName.trim());
       formData.append("members", JSON.stringify(selectedMembers));
       if (groupImage) formData.append("groupImage", groupImage);
-
       const res = await axios.post(`${server}/api/group/create`, formData, {
         withCredentials: true,
       });
-
       onGroupCreated(res.data);
       onClose();
     } catch (error) {
@@ -75,140 +65,167 @@ const CreateGroupModal = ({ onClose, onGroupCreated }) => {
   };
 
   return (
-    // Dark backdrop — click outside to close
     <div
-      className="fixed inset-0  bg-opacity-50 z-[200] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
       onClick={onClose}
     >
-      {/* Modal — stop clicks bubbling to backdrop */}
       <div
-        className="bg-white w-full max-w-[440px] rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]"
+        className="w-full max-w-[420px] rounded-2xl overflow-hidden flex flex-col max-h-[88vh]"
+        style={{
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          boxShadow: "var(--shadow-lg)",
+          fontFamily: "var(--font-sans)",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="w-full h-[60px] bg-[#1797c2] flex items-center justify-between px-5 flex-shrink-0">
-          <h2 className="text-white font-bold text-[20px]">New Group</h2>
-          <RxCross2
-            className="w-6 h-6 text-white cursor-pointer hover:opacity-70"
+        <div
+          className="flex items-center justify-between px-5 h-14 flex-shrink-0"
+          style={{ borderBottom: "1px solid var(--color-border)" }}
+        >
+          <h2
+            className="font-bold text-base"
+            style={{ color: "var(--color-text-primary)" }}
+          >
+            New Group
+          </h2>
+          <button
             onClick={onClose}
-          />
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+            style={{ color: "var(--color-text-muted)" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--color-elevated)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+          >
+            <RxCross2 className="w-4 h-4" />
+          </button>
         </div>
 
-        <div className="p-5 flex flex-col gap-4 overflow-y-auto">
-          {/* Group image + name row */}
-          <div className="flex items-center gap-4">
-            {/* Image picker circle */}
+        {/* Body */}
+        <div className="p-5 flex flex-col gap-4 overflow-y-auto flex-1">
+          {/* Image + name row */}
+          <div className="flex items-center gap-3">
             <label className="cursor-pointer relative flex-shrink-0">
-              <div className="w-[65px] h-[65px] rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-[#19cdff]">
+              <div
+                className="w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center"
+                style={{
+                  background: "var(--color-elevated)",
+                  border: "1px dashed var(--color-border-hover)",
+                }}
+              >
                 {preview ? (
-                  <img
-                    src={preview}
-                    alt="group"
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={preview} alt="group" className="w-full h-full object-cover" />
                 ) : (
-                  <FaCamera className="text-gray-400 w-6 h-6" />
+                  <FaCamera style={{ color: "var(--color-text-muted)" }} className="w-5 h-5" />
                 )}
               </div>
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={handleImageChange}
-              />
+              <input type="file" accept="image/*" hidden onChange={handleImageChange} />
             </label>
 
-            {/* Group name input */}
             <input
               type="text"
               placeholder="Group name..."
-              className="flex-1 h-[48px] rounded-full border-2 border-gray-300 px-4 outline-none text-[16px] focus:border-[#1797c2] transition-colors"
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
+              className="chat-input flex-1 h-11 px-4"
             />
           </div>
 
-          {/* Search bar */}
-          <div className="w-full h-[45px] bg-gray-100 rounded-full flex items-center gap-2 px-4">
-            <IoIosSearch className="w-5 h-5 text-gray-400 flex-shrink-0" />
+          {/* Search */}
+          <div
+            className="input-container flex items-center gap-2 px-3 h-9 rounded-lg"
+            style={{
+              background: "var(--color-elevated)",
+              border: "1px solid var(--color-border)",
+            }}
+          >
+            <IoIosSearch
+              className="w-4 h-4 flex-shrink-0"
+              style={{ color: "var(--color-text-muted)" }}
+            />
             <input
               type="text"
               placeholder="Search users..."
-              className="flex-1 bg-transparent outline-none text-[15px] text-gray-700"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
+              className="flex-1 bg-transparent text-sm outline-none border-0"
+              style={{ color: "var(--color-text-primary)" }}
             />
           </div>
 
-          {/* Member count + limit indicator */}
-          <div className="flex items-center justify-between px-1">
-            <p className="text-gray-500 text-[13px]">
+          {/* Counter */}
+          <div className="flex items-center justify-between">
+            <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
               {selectedMembers.length} / {MAX_MEMBERS} selected
             </p>
             {selectedMembers.length < 2 && (
-              <p className="text-red-400 text-[12px]">need at least 2</p>
+              <p className="text-xs" style={{ color: "var(--color-danger)" }}>
+                Need at least 2 members
+              </p>
             )}
             {isLimitReached && (
-              <p className="text-orange-400 text-[12px] font-medium">
-                limit reached (20 max)
+              <p className="text-xs font-medium" style={{ color: "#F59E0B" }}>
+                Limit reached (20 max)
               </p>
             )}
           </div>
 
           {/* User list */}
-          <div className="flex flex-col gap-2 overflow-y-auto max-h-[250px] pr-1">
+          <div className="flex flex-col gap-1 overflow-y-auto max-h-[220px]">
             {filteredUsers.length === 0 ? (
-              <p className="text-center text-gray-400 py-6 text-[15px]">
+              <p
+                className="text-sm text-center py-6"
+                style={{ color: "var(--color-text-muted)" }}
+              >
                 No users found
               </p>
             ) : (
               filteredUsers.map((user) => {
                 const isSelected = selectedMembers.includes(user._id);
                 const isDisabled = !isSelected && isLimitReached;
-
                 return (
                   <div
                     key={user._id}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all
-                      ${
-                        isSelected
-                          ? "bg-[#e8f7fb] border border-[#19cdff] cursor-pointer"
-                          : isDisabled
-                            ? "opacity-40 cursor-not-allowed"
-                            : "hover:bg-gray-100 cursor-pointer"
-                      }`}
-                    onClick={() => {
-                      if (isDisabled) return;
-                      toggleMember(user._id);
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer"
+                    style={{
+                      background: isSelected ? "var(--color-accent-muted)" : "transparent",
+                      border: `1px solid ${isSelected ? "rgba(91,95,239,0.25)" : "transparent"}`,
+                      opacity: isDisabled ? 0.4 : 1,
+                      cursor: isDisabled ? "not-allowed" : "pointer",
+                    }}
+                    onClick={() => { if (!isDisabled) toggleMember(user._id); }}
+                    onMouseEnter={e => {
+                      if (!isSelected && !isDisabled)
+                        e.currentTarget.style.background = "var(--color-elevated)";
+                    }}
+                    onMouseLeave={e => {
+                      if (!isSelected)
+                        e.currentTarget.style.background = "transparent";
                     }}
                   >
-                    {/* Avatar */}
-                    <div className="w-[45px] h-[45px] rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                    <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-gray-500">
                       <img
                         src={user?.image || dp}
                         alt=""
                         className="w-full h-full object-cover"
                       />
                     </div>
-
-                    {/* Name */}
-                    <span className="flex-1 text-gray-800 font-medium text-[16px] truncate">
+                    <span
+                      className="flex-1 text-sm font-medium truncate"
+                      style={{ color: "var(--color-text-primary)" }}
+                    >
                       {user.fullName || user.username}
                     </span>
-
-                    {/* Checkbox circle */}
                     <div
-                      className={`w-[24px] h-[24px] rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all
-                        ${
-                          isSelected
-                            ? "bg-[#1797c2] border-[#1797c2]"
-                            : "border-gray-300"
-                        }`}
+                      className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                      style={{
+                        background: isSelected ? "var(--color-accent)" : "transparent",
+                        borderColor: isSelected ? "var(--color-accent)" : "var(--color-border-hover)",
+                      }}
                     >
                       {isSelected && (
-                        <span className="text-white text-[12px] font-bold">
-                          ✓
-                        </span>
+                        <span className="text-white text-[10px] font-bold">✓</span>
                       )}
                     </div>
                   </div>
@@ -220,10 +237,8 @@ const CreateGroupModal = ({ onClose, onGroupCreated }) => {
           {/* Create button */}
           <button
             onClick={handleCreate}
-            disabled={
-              loading || selectedMembers.length < 2 || !groupName.trim()
-            }
-            className="w-full h-[50px] bg-[#1797c2] text-white rounded-full font-semibold text-[17px] hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex-shrink-0"
+            disabled={loading || selectedMembers.length < 2 || !groupName.trim()}
+            className="btn-accent w-full h-11 text-sm rounded-xl mt-1"
           >
             {loading ? "Creating..." : "Create Group"}
           </button>

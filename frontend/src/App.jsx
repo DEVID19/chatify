@@ -11,9 +11,11 @@ import { io } from "socket.io-client";
 import { server } from "./main";
 import { setOnlineUsers, setSocket } from "./redux/userSlice";
 import LoadingScreen from "./components/LoadingScreen";
+import { useTheme } from "./customHooks/useTheme";
 
 function App() {
   useCurrentUser();
+  useTheme(); // applies data-theme to <html>, enables CSS variable theming
   const { userData, loading, socket } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   useEffect(() => {

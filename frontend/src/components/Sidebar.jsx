@@ -5,6 +5,7 @@ import { IoIosSearch } from "react-icons/io";
 import { RxCross2 } from "react-icons/rx";
 import { RiLogoutCircleLine, RiChat3Fill } from "react-icons/ri";
 import { MdGroupAdd } from "react-icons/md";
+import { HiSun, HiMoon } from "react-icons/hi2";
 import axios from "axios";
 import { server } from "../main";
 import {
@@ -19,11 +20,65 @@ import {
   addNewGroup,
   clearGroupUnreadCount,
 } from "../redux/groupSlice";
-
 import { useNavigate } from "react-router-dom";
 import { clearUnreadCount } from "../redux/chatSlice";
 import CreateGroupModal from "./CreateGroupModal";
 import { AI_USER } from "../constants/aiUser";
+import { useTheme } from "../customHooks/useTheme";
+
+// ── Deterministic avatar color from username ─────────────────
+const AVATAR_COLORS = [
+  "#5B5FEF", "#10B981", "#F59E0B", "#EF4444",
+  "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16",
+];
+function getAvatarColor(str = "") {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+function getInitials(str = "") {
+  const parts = str.trim().split(/\s+/);
+  return parts.length >= 2
+    ? (parts[0][0] + parts[1][0]).toUpperCase()
+    : str.slice(0, 2).toUpperCase();
+}
+
+// ── Avatar — shows image or colorful initials ────────────────
+const Avatar = ({ src, name = "", size = 44, ring = false, online = false }) => {
+  const color = getAvatarColor(name);
+  const initials = getInitials(name || "?");
+  return (
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <div
+        className="w-full h-full rounded-full overflow-hidden"
+        style={{
+          border: ring ? `2px solid ${color}40` : "1px solid var(--color-border)",
+          boxShadow: ring ? `0 0 0 2px var(--color-surface)` : undefined,
+        }}
+      >
+        {src ? (
+          <img src={src} alt={name} className="w-full h-full object-cover" />
+        ) : (
+          <div
+            className="avatar-initials w-full h-full"
+            style={{ background: color, fontSize: size * 0.31 + "px" }}
+          >
+            {initials}
+          </div>
+        )}
+      </div>
+      {online && (
+        <span
+          className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2"
+          style={{
+            background: "var(--color-online)",
+            borderColor: "var(--color-surface)",
+          }}
+        />
+      )}
+    </div>
+  );
+};
 
 const Sidebar = () => {
   const { userData, otherUsers, selectedUser, onlineUsers, searchData } =
@@ -33,9 +88,9 @@ const Sidebar = () => {
     (state) => state.group,
   );
 
-  const [searchActive, setSearchActive] = useState(false);
   const [input, setInput] = useState("");
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -67,11 +122,9 @@ const Sidebar = () => {
     if (input) handleSearch();
   }, [input]);
 
-  // ── Separate self from other users ──────────────────────────
   const selfUser = otherUsers?.find((u) => u.isSelf);
   const nonSelfUsers = otherUsers?.filter((u) => !u.isSelf) || [];
 
-  // ── Order direct chat users by recent activity ───────────────
   let orderedDirectUsers = [];
   if (nonSelfUsers.length > 0) {
     const recentUsers = recentChats
@@ -83,8 +136,6 @@ const Sidebar = () => {
     orderedDirectUsers = [...recentUsers, ...remainingUsers];
   }
 
-  // ── Build unified list: direct chats + groups mixed ──────────
-  // Tag each item with type so render knows how to handle it
   const directItems = orderedDirectUsers.map((u) => ({
     type: "direct",
     _id: u._id,
@@ -96,306 +147,466 @@ const Sidebar = () => {
     type: "group",
     _id: g._id,
     data: g,
-    sortKey: index, // already sorted by updatedAt from backend
+    sortKey: index,
   }));
 
-  // Merge and sort — lower sortKey = more recent = appears first
   const unifiedList = [...directItems, ...groupItems].sort(
     (a, b) => a.sortKey - b.sortKey,
   );
 
-  // When a group is created, add it to the list immediately
   const handleGroupCreated = (newGroup) => {
     dispatch(addNewGroup(newGroup));
   };
 
-  // Hide sidebar on mobile when any chat is open
   const isAnyChatOpen = selectedUser || selectedGroup;
+
+  // ── Filtered display list (search or full) ────────────────
+  const isSearching = input.length > 0;
+  const displayList = isSearching ? searchData || [] : null;
 
   return (
     <div
-      className={`lg:w-[30%] w-full h-full bg-slate-200 lg:block relative
-        ${!isAnyChatOpen ? "block" : "hidden"}`}
+      className={`lg:w-[320px] w-full h-full flex flex-col relative
+        ${!isAnyChatOpen ? "flex" : "hidden"} lg:flex`}
+      style={{
+        background: "var(--color-surface)",
+        borderRight: "1px solid var(--color-border)",
+      }}
     >
-      {/* ── Bottom left action buttons ─────────────────────── */}
-      <div className="fixed bottom-[20px] left-[20px] flex items-center gap-3 z-50">
-        {/* Logout */}
-        <div
-          className="w-14 h-14 rounded-full shadow-lg bg-[#19cdff] shadow-gray-500 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
-          onClick={handleLogout}
-        >
-          <RiLogoutCircleLine className="w-7 h-7 text-white" />
-        </div>
-
-        {/* Create Group */}
-        <div
-          className="w-14 h-14 rounded-full shadow-lg bg-[#1797c2] shadow-gray-500 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
-          onClick={() => setShowCreateGroup(true)}
-          title="Create Group"
-        >
-          <MdGroupAdd className="w-7 h-7 text-white" />
-        </div>
-      </div>
-
-      {/* ── Search result dropdown ──────────────────────────── */}
-      {input.length > 0 && (
-        <div className="flex w-full bg-white h-[500px] overflow-y-auto flex-col items-center pt-[20px] gap-[10px] absolute top-[250px] z-[150] shadow-lg">
-          {searchData?.map((user) => (
-            <div
-              key={user._id}
-              className="w-[95%] h-[70px] flex items-center gap-[20px] bg-white border-b-2 border-gray-400 px-[20px] cursor-pointer hover:bg-[#63c2dc]"
-              onClick={() => {
-                dispatch(setSelectedUser(user));
-                dispatch(setSelectedGroup(null)); // close any open group
-                setInput("");
-                setSearchActive(false);
-              }}
-            >
-              <div className="relative rounded-full shadow-lg bg-white flex items-center justify-center">
-                <div className="w-[60px] h-[60px] rounded-full overflow-hidden flex justify-center items-center">
-                  <img src={user?.image || dp} alt="" className="h-[100%]" />
-                </div>
-                {onlineUsers?.includes(user._id) && (
-                  <span className="w-[12px] h-[12px] rounded-full absolute bottom-[6px] right-[-1px] bg-[#3aff20] shadow-gray-500 shadow-md" />
-                )}
-              </div>
-              <h1 className="text-gray-800 font-semibold text-[20px]">
-                {user.fullName || user.username}
-              </h1>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── Top header ─────────────────────────────────────── */}
-      <div className="w-full h-[300px] bg-[#19cdff] rounded-b-[30%] shadow-lg shadow-gray-400 flex flex-col justify-center px-[20px]">
-        <div className="flex items-center gap-2.5 mb-2">
-          <img
-            src="/logo.svg"
-            alt="Chatify Logo"
-            className="w-10 h-10 rounded-xl shadow-md border border-white/40"
-          />
-          <h1 className="text-white font-extrabold text-[28px] tracking-tight">Chatify</h1>
-        </div>
-        <div className="w-full flex justify-between items-center">
-          <h1 className="text-gray-800 font-bold text-[22px] sm:text-[25px]">
-            Hii, {userData?.fullName || "User"}
-          </h1>
-          <div
-            className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-white shadow-lg overflow-hidden bg-white shadow-gray-500 cursor-pointer hover:scale-110 transition-transform"
-            onClick={() => navigate("/profile")}
-          >
+      {/* ── Header ────────────────────────────────────────── */}
+      <div
+        className="flex-shrink-0 px-4 pt-5 pb-3"
+        style={{ borderBottom: "1px solid var(--color-border)" }}
+      >
+        {/* Brand row */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
             <img
-              src={userData?.image || dp}
-              alt="Profile"
-              className="w-full h-full object-cover"
+              src="/logo.svg"
+              alt="Chatify"
+              className="w-8 h-8 rounded-lg"
+              style={{ border: "1px solid var(--color-border)" }}
             />
-          </div>
-        </div>
-
-        {/* Online users strip */}
-        <div className="w-full flex items-center gap-[15px] overflow-x-auto py-[10px]">
-          {!searchActive && (
-            <div
-              className="w-14 h-14 rounded-full border-2 mt-[10px] border-white bg-white shadow-gray-500 shadow-md flex items-center justify-center cursor-pointer hover:scale-110 transition-transform flex-shrink-0"
-              onClick={() => setSearchActive(true)}
+            <span
+              className="text-lg font-bold tracking-tight"
+              style={{ color: "var(--color-text-primary)", fontFamily: "var(--font-sans)" }}
             >
-              <IoIosSearch className="w-7 h-7" />
-            </div>
-          )}
-          {searchActive && (
-            <form className="w-full h-[55px] bg-white shadow-gray-500 shadow-md flex items-center gap-[10px] mt-[10px] rounded-full overflow-hidden px-[20px]">
-              <IoIosSearch className="w-[22px] h-[22px] text-gray-700" />
-              <input
-                type="text"
-                placeholder="Search User..."
-                className="w-full h-full p-[10px] text-[16px] outline-none border-0"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-              />
-              <RxCross2
-                className="w-[22px] h-[22px] text-gray-700 cursor-pointer"
-                onClick={() => {
-                  setSearchActive(false);
-                  setInput("");
-                }}
-              />
-            </form>
-          )}
-
-          {/* Online user avatar bubbles — direct chat users only */}
-          {!searchActive &&
-            nonSelfUsers.map(
-              (user) =>
-                onlineUsers?.includes(user._id) && (
-                  <div
-                    key={user._id}
-                    className="relative rounded-full shadow-gray-500 shadow-md  bg-white flex items-center justify-center mt-[10px] cursor-pointer flex-shrink-0 hover:scale-110 transition-transform"
-                    onClick={() => {
-                      dispatch(setSelectedUser(user));
-                      dispatch(setSelectedGroup(null));
-                    }}
-                  >
-                    <div className="w-[55px] h-[55px] rounded-full overflow-hidden flex justify-center items-center">
-                      <img
-                        src={user?.image || dp}
-                        alt=""
-                        className="h-[100%]"
-                      />
-                    </div>
-                    <span className="w-[12px] h-[12px] rounded-full absolute bottom-[4px] right-[-1px] bg-[#3aff20] shadow-gray-500 shadow-md" />
-                  </div>
-                ),
-            )}
-        </div>
-      </div>
-
-      {/* ── Unified chat list ───────────────────────────────── */}
-      <div className="w-full h-[50%] lg:h-[45%] overflow-auto flex flex-col gap-[15px] mt-[20px] items-center pb-[90px]">
-        {/* ── Chatify AI chat (pinned) ───────────────────────── */}
-        <div
-          className={`w-[95%] h-[65px] flex items-center gap-[15px]
-    bg-white shadow-lg shadow-gray-400 rounded-full cursor-pointer
-    hover:bg-[#e6f7ff] transition-colors
-    ${selectedUser?._id === AI_USER._id ? "ring-2 ring-[#19cdff]" : ""}`}
-          onClick={() => {
-            dispatch(setSelectedUser(AI_USER));
-            dispatch(setSelectedGroup(null));
-            dispatch(setGroupMessages([]));
-          }}
-        >
-          <div className="relative rounded-full shadow-gray-400 shadow-lg bg-white flex-shrink-0">
-            <div className="w-[65px] h-[65px] rounded-full overflow-hidden flex justify-center items-center bg-[#19cdff]">
-              <span className="text-white text-[22px] font-bold">AI</span>
-            </div>
-          </div>
-
-          <div className="flex flex-col min-w-0">
-            <h1 className="text-gray-800 font-semibold text-[18px]">
-              Chatify AI
-            </h1>
-            <span className="text-gray-500 text-[12px] truncate">
-              Ask anything • Images • Help
+              Chatify
             </span>
           </div>
+
+          {/* Toolbar icons */}
+          <div className="flex items-center gap-1">
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+              style={{ color: "var(--color-text-secondary)" }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = "var(--color-elevated)";
+                e.currentTarget.style.color = "var(--color-text-primary)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "var(--color-text-secondary)";
+              }}
+            >
+              {theme === "dark"
+                ? <HiSun className="w-4.5 h-4.5" />
+                : <HiMoon className="w-4.5 h-4.5" />}
+            </button>
+
+            {/* Create Group */}
+            <button
+              onClick={() => setShowCreateGroup(true)}
+              title="New Group"
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+              style={{ color: "var(--color-text-secondary)" }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = "var(--color-elevated)";
+                e.currentTarget.style.color = "var(--color-text-primary)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "var(--color-text-secondary)";
+              }}
+            >
+              <MdGroupAdd className="w-[18px] h-[18px]" />
+            </button>
+
+            {/* Logout */}
+            <button
+              onClick={handleLogout}
+              title="Logout"
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+              style={{ color: "var(--color-text-secondary)" }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = "rgba(239,68,68,0.1)";
+                e.currentTarget.style.color = "var(--color-danger)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "var(--color-text-secondary)";
+              }}
+            >
+              <RiLogoutCircleLine className="w-[17px] h-[17px]" />
+            </button>
+          </div>
         </div>
 
-        {/* Self chat — always pinned at very top */}
-        {selfUser && (
-          <div
-            className="w-[95%] h-[65px] flex items-center gap-[15px] bg-gradient-to-r from-[#19cdff] to-[#1797c2] shadow-lg shadow-gray-400 rounded-full cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => {
-              dispatch(setSelectedUser(selfUser));
-              dispatch(setSelectedGroup(null));
-              dispatch(clearUnreadCount(selfUser._id));
-            }}
-          >
-            <div className="relative rounded-full shadow-gray-400 shadow-lg bg-white flex-shrink-0">
-              <div className="w-[65px] h-[65px] rounded-full overflow-hidden flex justify-center items-center">
-                <img src={selfUser?.image || dp} alt="" className="h-[100%]" />
-              </div>
-              <span className="w-[16px] h-[16px] rounded-full absolute bottom-[3px] right-[-2px] bg-yellow-400 shadow-md flex items-center justify-center text-[8px]">
-                ✦
-              </span>
-            </div>
-            <div className="flex flex-col min-w-0">
-              <h1 className="text-white font-semibold text-[18px]">You</h1>
-              <span className="text-white text-[11px] opacity-80 truncate">
-                Notes • Reminders • Ideas
-              </span>
-            </div>
+        {/* User greeting row */}
+        <div
+          className="flex items-center gap-3 mb-4 p-2.5 rounded-xl cursor-pointer transition-all"
+          onClick={() => navigate("/profile")}
+          style={{ border: "1px solid transparent" }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = "var(--color-elevated)";
+            e.currentTarget.style.borderColor = "var(--color-border)";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.borderColor = "transparent";
+          }}
+        >
+          <Avatar
+            src={userData?.image}
+            name={userData?.fullName || userData?.username || ""}
+            size={38}
+            ring
+          />
+          <div className="flex-1 min-w-0">
+            <p
+              className="text-sm font-semibold truncate"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              {userData?.fullName || userData?.username || "You"}
+            </p>
+            <p
+              className="text-xs truncate"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              {userData?.status || "Edit profile"}
+            </p>
           </div>
-        )}
+        </div>
 
-        {/* Direct chats + groups mixed, ordered by recent activity */}
-        {unifiedList.map((item) => {
-          // ── Direct chat card ────────────────────────────
-          if (item.type === "direct") {
-            const user = item.data;
-            return (
+        {/* Search bar */}
+        <div
+          className="input-container flex items-center gap-2.5 px-3 h-9 rounded-lg"
+          style={{
+            background: "var(--color-elevated)",
+            border: "1px solid var(--color-border)",
+          }}
+        >
+          <IoIosSearch
+            className="w-4 h-4 flex-shrink-0"
+            style={{ color: "var(--color-text-muted)" }}
+          />
+          <input
+            type="text"
+            placeholder="Search..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            className="flex-1 bg-transparent text-sm outline-none border-0"
+            style={{
+              color: "var(--color-text-primary)",
+              fontFamily: "var(--font-sans)",
+            }}
+          />
+          {input && (
+            <RxCross2
+              className="w-3.5 h-3.5 cursor-pointer flex-shrink-0"
+              style={{ color: "var(--color-text-muted)" }}
+              onClick={() => {
+                setInput("");
+                dispatch(setSearchData([]));
+              }}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* ── Online users strip ─────────────────────────────── */}
+      {!isSearching && (
+        <div
+          className="flex-shrink-0 px-4 py-3 overflow-x-auto flex items-center gap-3"
+          style={{ borderBottom: "1px solid var(--color-border)" }}
+        >
+          {nonSelfUsers
+            .filter((u) => onlineUsers?.includes(u._id))
+            .map((user) => (
               <div
-                key={`direct-${user._id}`}
-                className="w-[95%] h-[65px] flex items-center gap-[15px] bg-white shadow-lg shadow-gray-400 rounded-full cursor-pointer hover:bg-[#63c2dc] transition-colors"
+                key={user._id}
+                className="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0"
                 onClick={() => {
                   dispatch(setSelectedUser(user));
                   dispatch(setSelectedGroup(null));
-                  dispatch(clearUnreadCount(user._id));
                 }}
               >
-                <div className="relative rounded-full shadow-gray-400 shadow-lg bg-white flex-shrink-0">
-                  <div className="w-[65px] h-[65px] rounded-full overflow-hidden flex justify-center items-center">
-                    <img src={user?.image || dp} alt="" className="h-[100%]" />
-                  </div>
-                  {onlineUsers?.includes(user._id) && (
-                    <span className="w-[12px] h-[12px] rounded-full absolute bottom-[4px] right-[-1px] bg-[#3aff20] shadow-gray-500 shadow-md" />
-                  )}
-                </div>
-                <h1 className="text-gray-800 font-semibold text-[18px] flex-1 truncate">
-                  {user.fullName || user.username}
-                </h1>
-                {/* Unread badge */}
-                {unreadCounts?.[user._id] > 0 && (
-                  <span className="mr-3 bg-[#1797c2] text-white text-[12px] font-bold min-w-[24px] h-[24px] rounded-full flex items-center justify-center px-1 flex-shrink-0">
-                    {unreadCounts[user._id]}
-                  </span>
-                )}
+                <Avatar
+                  src={user?.image}
+                  name={user.fullName || user.username || ""}
+                  size={36}
+                  online
+                />
+                <span
+                  className="text-[10px] font-medium truncate max-w-[40px]"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
+                  {(user.fullName || user.username || "").split(" ")[0]}
+                </span>
               </div>
-            );
-          }
+            ))}
+          {nonSelfUsers.filter((u) => onlineUsers?.includes(u._id)).length === 0 && (
+            <span
+              className="text-xs py-1"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              No one online right now
+            </span>
+          )}
+        </div>
+      )}
 
-          // ── Group chat card ─────────────────────────────
-          if (item.type === "group") {
-            const group = item.data;
-            return (
+      {/* ── Chat List ─────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto px-2 py-2 flex flex-col gap-0.5">
+
+        {/* Search results */}
+        {isSearching && (
+          <>
+            <p
+              className="text-[11px] font-semibold uppercase tracking-wider px-3 py-2"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              Search Results
+            </p>
+            {(displayList || []).map((user) => (
               <div
-                key={`group-${group._id}`}
-                className="w-[95%] h-[65px] flex items-center gap-[15px] bg-white shadow-lg shadow-gray-400 rounded-full cursor-pointer hover:bg-[#63c2dc] transition-colors"
+                key={user._id}
+                className="chat-row"
                 onClick={() => {
-                  dispatch(setSelectedGroup(group));
-                  dispatch(setSelectedUser(null));
-                  dispatch(setGroupMessages([]));
-                  dispatch(clearGroupUnreadCount(group._id));
+                  dispatch(setSelectedUser(user));
+                  dispatch(setSelectedGroup(null));
+                  setInput("");
+                  dispatch(setSearchData([]));
                 }}
               >
-                <div className="relative rounded-full shadow-gray-400 shadow-lg bg-white flex-shrink-0">
-                  <div className="w-[65px] h-[65px] rounded-full overflow-hidden flex justify-center items-center bg-gray-100">
-                    <img
-                      src={group?.groupImage || dp}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  {/* Group badge — small blue circle with group icon */}
-                  <span className="w-[18px] h-[18px] rounded-full absolute bottom-[3px] right-[-2px] bg-[#1797c2] shadow-md flex items-center justify-center">
-                    <MdGroupAdd className="w-[11px] h-[11px] text-white" />
-                  </span>
+                <Avatar
+                  src={user?.image}
+                  name={user.fullName || user.username || ""}
+                  size={42}
+                  online={onlineUsers?.includes(user._id)}
+                />
+                <div className="flex-1 min-w-0">
+                  <p
+                    className="text-sm font-semibold truncate"
+                    style={{ color: "var(--color-text-primary)" }}
+                  >
+                    {user.fullName || user.username}
+                  </p>
                 </div>
+              </div>
+            ))}
+            {displayList?.length === 0 && (
+              <p
+                className="text-sm text-center py-6"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                No users found
+              </p>
+            )}
+          </>
+        )}
 
-                <div className="flex flex-row flex-1 min-w-0">
-                  {/* first div of name of group and member  */}
-                  <div className="flex flex-col flex-1 min-w-0">
-                    <h1 className="text-gray-800 font-semibold text-[18px] truncate">
-                      {group.groupName}
-                    </h1>
-                    <span className="text-gray-500 text-[12px]">
-                      {group.participants.length} members
-                    </span>
-                  </div>
-                  {/* second dive for unread count  */}
-                  <div className="flex  justify-end items-center">
-                    {groupUnreadCounts?.[group._id] > 0 && (
-                      <span className="mr-3 bg-[#1797c2] text-white text-[12px] font-bold min-w-[24px] h-[24px] rounded-full flex items-center justify-center px-1 flex-shrink-0">
-                        {groupUnreadCounts[group._id]}
+        {/* Normal chat list */}
+        {!isSearching && (
+          <>
+            <p
+              className="text-[11px] font-semibold uppercase tracking-wider px-3 py-2"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              Messages
+            </p>
+
+            {/* Chatify AI — pinned */}
+            <div
+              className={`chat-row ${selectedUser?._id === AI_USER._id ? "active" : ""}`}
+              onClick={() => {
+                dispatch(setSelectedUser(AI_USER));
+                dispatch(setSelectedGroup(null));
+                dispatch(setGroupMessages([]));
+              }}
+            >
+              <div
+                className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 font-extrabold text-sm text-white"
+                style={{
+                  background: "linear-gradient(135deg, var(--color-accent), #818cf8)",
+                  border: "1px solid var(--color-border)",
+                }}
+              >
+                AI
+              </div>
+              <div className="flex-1 min-w-0">
+                <p
+                  className="text-sm font-semibold"
+                  style={{ color: "var(--color-text-primary)" }}
+                >
+                  Chatify AI
+                </p>
+                <p
+                  className="text-xs truncate"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
+                  Ask anything • Images • Help
+                </p>
+              </div>
+            </div>
+
+            {/* Self chat */}
+            {selfUser && (
+              <div
+                className={`chat-row ${selectedUser?._id === selfUser._id ? "active" : ""}`}
+                onClick={() => {
+                  dispatch(setSelectedUser(selfUser));
+                  dispatch(setSelectedGroup(null));
+                  dispatch(clearUnreadCount(selfUser._id));
+                }}
+              >
+                <Avatar
+                  src={selfUser?.image}
+                  name={selfUser.fullName || selfUser.username || ""}
+                  size={42}
+                />
+                <div className="flex-1 min-w-0">
+                  <p
+                    className="text-sm font-semibold"
+                    style={{ color: "var(--color-text-primary)" }}
+                  >
+                    You
+                  </p>
+                  <p
+                    className="text-xs truncate"
+                    style={{ color: "var(--color-text-muted)" }}
+                  >
+                    Notes • Reminders • Ideas
+                  </p>
+                </div>
+                <span
+                  className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                  style={{
+                    background: "var(--color-accent-muted)",
+                    color: "var(--color-accent)",
+                  }}
+                >
+                  YOU
+                </span>
+              </div>
+            )}
+
+            {/* Direct + Group list */}
+            {unifiedList.map((item) => {
+              if (item.type === "direct") {
+                const user = item.data;
+                const isActive = selectedUser?._id === user._id;
+                const count = unreadCounts?.[user._id];
+                return (
+                  <div
+                    key={`direct-${user._id}`}
+                    className={`chat-row ${isActive ? "active" : ""}`}
+                    onClick={() => {
+                      dispatch(setSelectedUser(user));
+                      dispatch(setSelectedGroup(null));
+                      dispatch(clearUnreadCount(user._id));
+                    }}
+                  >
+                    <Avatar
+                      src={user?.image}
+                      name={user.fullName || user.username || ""}
+                      size={42}
+                      online={onlineUsers?.includes(user._id)}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className="text-sm font-semibold truncate"
+                        style={{ color: "var(--color-text-primary)" }}
+                      >
+                        {user.fullName || user.username}
+                      </p>
+                      <p
+                        className="text-xs truncate"
+                        style={{ color: "var(--color-text-muted)" }}
+                      >
+                        {onlineUsers?.includes(user._id) ? "Online" : "Tap to chat"}
+                      </p>
+                    </div>
+                    {count > 0 && (
+                      <span
+                        className="text-[11px] font-bold min-w-[20px] h-5 px-1.5 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{
+                          background: "var(--color-accent)",
+                          color: "#fff",
+                        }}
+                      >
+                        {count}
                       </span>
                     )}
                   </div>
-                </div>
-              </div>
-            );
-          }
+                );
+              }
 
-          return null;
-        })}
+              if (item.type === "group") {
+                const group = item.data;
+                const isActive = selectedGroup?._id === group._id;
+                const count = groupUnreadCounts?.[group._id];
+                return (
+                  <div
+                    key={`group-${group._id}`}
+                    className={`chat-row ${isActive ? "active" : ""}`}
+                    onClick={() => {
+                      dispatch(setSelectedGroup(group));
+                      dispatch(setSelectedUser(null));
+                      dispatch(setGroupMessages([]));
+                      dispatch(clearGroupUnreadCount(group._id));
+                    }}
+                  >
+                    <Avatar
+                      src={group?.groupImage}
+                      name={group.groupName || ""}
+                      size={42}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className="text-sm font-semibold truncate"
+                        style={{ color: "var(--color-text-primary)" }}
+                      >
+                        {group.groupName}
+                      </p>
+                      <p
+                        className="text-xs truncate"
+                        style={{ color: "var(--color-text-muted)" }}
+                      >
+                        {group.participants.length} members
+                      </p>
+                    </div>
+                    {count > 0 && (
+                      <span
+                        className="text-[11px] font-bold min-w-[20px] h-5 px-1.5 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{
+                          background: "var(--color-accent)",
+                          color: "#fff",
+                        }}
+                      >
+                        {count}
+                      </span>
+                    )}
+                  </div>
+                );
+              }
+              return null;
+            })}
+          </>
+        )}
       </div>
 
       {/* Create Group Modal */}
