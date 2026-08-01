@@ -17,7 +17,7 @@ export const createGroup = async (req, res) => {
     }
 
     if (!parsedMembers || parsedMembers.length < 2) {
-      return res
+      return res 
         .status(400)
         .json({ message: "Select at least 2 members to create a group" });
     }

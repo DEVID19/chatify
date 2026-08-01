@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import dp from "../assets/dp.png";
 import { IoIosSearch } from "react-icons/io";
 import { RxCross2 } from "react-icons/rx";
-import { RiLogoutCircleLine } from "react-icons/ri";
+import { RiLogoutCircleLine, RiChat3Fill } from "react-icons/ri";
 import { MdGroupAdd } from "react-icons/md";
 import axios from "axios";
 import { server } from "../main";
@@ -169,7 +169,14 @@ const Sidebar = () => {
 
       {/* ── Top header ─────────────────────────────────────── */}
       <div className="w-full h-[300px] bg-[#19cdff] rounded-b-[30%] shadow-lg shadow-gray-400 flex flex-col justify-center px-[20px]">
-        <h1 className="text-white font-bold text-[25px]">Chatify</h1>
+        <div className="flex items-center gap-2.5 mb-2">
+          <img
+            src="/logo.svg"
+            alt="Chatify Logo"
+            className="w-10 h-10 rounded-xl shadow-md border border-white/40"
+          />
+          <h1 className="text-white font-extrabold text-[28px] tracking-tight">Chatify</h1>
+        </div>
         <div className="w-full flex justify-between items-center">
           <h1 className="text-gray-800 font-bold text-[22px] sm:text-[25px]">
             Hii, {userData?.fullName || "User"}

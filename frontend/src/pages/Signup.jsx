@@ -4,6 +4,7 @@ import { server } from "../main";
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { setuserData } from "../redux/userSlice";
+import { RiChat3Fill } from "react-icons/ri";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -50,9 +51,14 @@ const Signup = () => {
   return (
     <div className="w-full h-[100vh] bg-slate-200 flex items-center justify-center">
       <div className="w-full max-w-[500px] h-[600px] bg-white rounded-lg  shadow-lg shadow-gray-400 flex flex-col gap-[30px]">
-        <div className="w-full h-[200px] bg-[#19cdff] rounded-b-[30%] shadow-lg shadow-gray-400 flex items-center justify-center ">
-          <h1 className="text-[30px] font-bold text-center text-gray-600 ">
-            Welcome to <span className="text-white">Chatify</span>{" "}
+        <div className="w-full h-[200px] bg-[#19cdff] rounded-b-[30%] shadow-lg shadow-gray-400 flex flex-col items-center justify-center gap-2">
+          <img
+            src="/logo.svg"
+            alt="Chatify Logo"
+            className="w-14 h-14 rounded-2xl shadow-md border border-white/40"
+          />
+          <h1 className="text-[30px] font-bold text-center text-gray-600">
+            Welcome to <span className="text-white">Chatify</span>
           </h1>
         </div>
         <form

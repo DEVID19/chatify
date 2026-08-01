@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="chatify-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="50%" stop-color="#19CDFF" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+    <linearGradient id="chatify-bubble" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#F0F9FF" />
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle Background -->
+  <rect width="512" height="512" rx="140" fill="url(#chatify-bg)" />
+  
+  <!-- Subtle Inner Border Highlight -->
+  <rect x="8" y="8" width="496" height="496" rx="132" fill="none" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="8" />
+
+  <!-- Main Speech Bubble -->
+  <path d="M 256 120 C 170 120 100 176 100 245 C 100 285 122 320 156 343 L 138 400 L 198 372 C 216 378 236 382 256 382 C 342 382 412 326 412 257 C 412 188 342 120 256 120 Z" fill="url(#chatify-bubble)" />
+
+  <!-- 3 Dots inside Bubble -->
+  <circle cx="196" cy="248" r="22" fill="#0284C7" />
+  <circle cx="256" cy="248" r="22" fill="#19CDFF" />
+  <circle cx="316" cy="248" r="22" fill="#38BDF8" />
+
+  <!-- Sparkle Accent -->
+  <path d="M 400 110 C 400 125 410 135 425 135 C 410 135 400 145 400 160 C 400 145 390 135 375 135 C 390 135 400 125 400 110 Z" fill="#FFFFFF" />
+</svg>

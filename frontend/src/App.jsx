@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { io } from "socket.io-client";
 import { server } from "./main";
 import { setOnlineUsers, setSocket } from "./redux/userSlice";
+import LoadingScreen from "./components/LoadingScreen";
 
 function App() {
   useCurrentUser();
@@ -38,7 +39,8 @@ function App() {
     }
   }, [userData]);
 
-  if (loading) return <p>loading .... </p>; // or spinner
+  if (loading) return <LoadingScreen />;
+
   return (
     <Routes>
       <Route

@@ -12,7 +12,7 @@ export const signup = async (req, res) => {
     }
 
     if (!validator.isEmail(email)) {
-      throw new Error("Invalid Email");
+      throw new Error("Invalid Email"); 
     }
 
     if (
